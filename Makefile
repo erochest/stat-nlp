@@ -10,10 +10,13 @@ cabal.sandbox.config:
 	cabal sandbox init
 
 clean:
-	rm -f *.o *.hi
+	rm -f *.o *.hi *.html
 
 distclean: clean
 	rm -f HelloWorld
 	cabal sandbox delete
+
+%.html: *.lhs
+	pandoc --from markdown+lhs --to html5 --smart --standalone --output=$@ $<
 
 .PHONY: init build clean distclean
