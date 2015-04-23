@@ -3,7 +3,7 @@ chapters=Chapter01
 
 build: $(chapters)
 
-$(chapters) : % : %.lhs cabal.sandbox.config
+$(chapters) : % : %.hs cabal.sandbox.config
 	cabal exec -- ghc --make $<
 
 init: cabal.sandbox.config deps
