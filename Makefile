@@ -9,22 +9,25 @@ $(chapters) : % : %.lhs cabal.sandbox.config
 init: cabal.sandbox.config deps
 
 cabal.sandbox.config:
-	stackage sandbox init
+	cabal sandbox init
+	cabal sandbox add-source ~/p/taygeta
 
 deps: cabal.sandbox.config
-	cabal install text
-
-upgrade:
-	stackage sandbox upgrade
+	cabal install taygeta \
+		system-filepath system-fileio \
+		conduit conduit-combinators conduit-extra \
+		optparse-applicative
 
 clean:
 	-rm -f *.o *.hi *.html
 
 distclean: clean
-	-rm -f HelloWorld
-	stackage sandbox delete
+	-rm -f $(chapters)
+	cabal sandbox delete
+
+reboot: distclean init
 
 %.html: *.lhs
 	pandoc --from markdown+lhs --to html5 --smart --standalone --output=$@ $<
 
-.PHONY: init deps build clean distclean upgrade
+.PHONY: init deps build clean distclean reboot
