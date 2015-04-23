@@ -12,7 +12,6 @@ import           Taygeta.Types
 {-
  - **TODO**: Research Wittgenstein's *use theory of meaning*.
  -
- - TODO: tokenization
  - TODO: frequency
  - TODO: token/type ratio
  - TODO: collocate generator
