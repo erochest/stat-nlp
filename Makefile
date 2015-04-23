@@ -1,8 +1,10 @@
 
-build: HelloWorld
+chapters=Chapter01
 
-HelloWorld: cabal.sandbox.config HelloWorld.lhs
-	cabal exec -- ghc --make HelloWorld.lhs
+build: $(chapters)
+
+$(chapters) : % : %.lhs cabal.sandbox.config
+	cabal exec -- --ghc --make $<
 
 init: cabal.sandbox.config deps
 
