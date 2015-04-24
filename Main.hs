@@ -20,7 +20,6 @@ import           Taygeta.Types
 {-
  - **TODO**: Research Wittgenstein's *use theory of meaning*.
  -
- - TODO: token/type ratio
  - TODO: collocate generator
  - TODO: n-gram generator
  - TODO: stopword filter
@@ -47,6 +46,10 @@ freqReport n = mapM_ (F.print "{}\t{}\n")
              . L.sortBy (comparing (Down . snd))
              . M.toList
 
+tokenTypeRatio :: FreqMap a -> Double
+tokenTypeRatio fm = fromIntegral (sum (M.elems fm))
+                  / fromIntegral (M.size fm)
+
 main :: IO ()
 main = do
     freqs <- runResourceT $  stdinC
@@ -55,3 +58,4 @@ main = do
                           $= mapC T.toLower
                           $$ frequenciesC
     freqReport 25 freqs
+    F.print "Token/type ratio = {}\n" . F.Only $ tokenTypeRatio freqs
