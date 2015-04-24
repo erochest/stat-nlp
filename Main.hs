@@ -8,10 +8,7 @@ import           Conduit
 import qualified Data.Conduit.Text as CT
 import qualified Data.Text         as T
 import qualified Data.Text.Format  as F
-import qualified Data.Text.IO      as TIO
-import           Data.Traversable
 import           Taygeta.Tokenizer (regexTokenizer)
-import           Taygeta.Types
 
 import           StatNLP.Output
 import           StatNLP.Types
