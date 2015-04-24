@@ -17,7 +17,7 @@ specs: build
 	./dist/build/stat-nlp-specs/stat-nlp-specs
 
 run:
-	${CABAL} run
+	${CABAL} run < corpora/gutenberg/carroll-alice.txt
 
 
 # docs:
