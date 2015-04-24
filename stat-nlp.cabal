@@ -20,7 +20,7 @@ library
   -- other-modules:       
   -- other-extensions:    
   build-depends:       base >=4.8 && <5
-  -- hs-source-dirs:      
+  hs-source-dirs:      src
   default-language:    Haskell2010
 
 executable stat-nlp
@@ -29,8 +29,15 @@ executable stat-nlp
   -- other-extensions:    
   build-depends:       base >=4.8 && <5
                      , stat-nlp
-                     , text
+                     , conduit
+                     , conduit-combinators
+                     , conduit-extra
+                     , hashable
                      , optparse-applicative
+                     , taygeta
+                     , text
+                     , text-format
+                     , unordered-containers
   -- hs-source-dirs:      .
   default-language:    Haskell2010
 
