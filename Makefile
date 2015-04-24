@@ -14,9 +14,10 @@ cabal.sandbox.config:
 
 deps: cabal.sandbox.config
 	cabal install taygeta \
+		text-format \
 		system-filepath system-fileio \
 		conduit conduit-combinators conduit-extra \
-		optparse-applicative
+		unordered-containers
 
 clean:
 	-rm -f *.o *.hi *.html
