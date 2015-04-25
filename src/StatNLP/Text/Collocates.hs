@@ -19,7 +19,8 @@ import           StatNLP.Types
 type CollState a = (S.Seq a, Maybe a, S.Seq a)
 
 collocates :: Int -> Int -> [a] -> [(a, a)]
-collocates before after = uncurry finis . mapAccumL (step before after) initState
+collocates before after = uncurry (finis before)
+                        . mapAccumL (step before after) initState
 
 initState :: CollState a
 initState = (S.empty, Nothing, S.empty)
@@ -39,12 +40,10 @@ shift before after (as, current, zs) a
     | S.length zs < after = (as, current, zs |> a)
     | otherwise           = left as (trim before (maybe as (as |>) current)) (zs |> a)
 
-shift' :: CollState a -> CollState a
-shift' (as, Nothing, zs) = left as as zs
-shift' (as, Just c,  zs) = left as' as' zs
-    where as' = case S.viewl (as |> c) of
-                    EmptyL  -> S.empty
-                    _ :< xs -> xs
+shift' :: Int -> CollState a -> CollState a
+shift' _      (as, Nothing, zs) = left as as zs
+shift' before (as, Just c,  zs) = left as' as' zs
+    where as' = trim before (as |> c)
 
 trim :: Int -> S.Seq a -> S.Seq a
 trim n ss | S.length ss > n = case S.viewl ss of
@@ -56,13 +55,13 @@ pairs :: CollState a -> [(a, a)]
 pairs (as, Just c, zs) = toList . fmap (c,) $ as >< zs
 pairs (_, Nothing, _)  = []
 
-finis :: CollState a -> [[(a, a)]] -> [(a, a)]
-finis s xs = concat xs ++ finis' (shift' s)
+finis :: Int -> CollState a -> [[(a, a)]] -> [(a, a)]
+finis before s xs = concat xs ++ finis' before (shift' before s)
 
-finis' :: CollState a -> [(a, a)]
-finis' s@(_, Nothing, zs) | S.null zs = []
-                          | otherwise = finis' (shift' s)
-finis' s = pairs s ++ finis' (shift' s)
+finis' :: Int -> CollState a -> [(a, a)]
+finis' before s@(_, Nothing, zs) | S.null zs = []
+                                 | otherwise = finis' before (shift' before s)
+finis' before s = pairs s ++ finis' before (shift' before s)
 
 collocatesC :: Monad m => Int -> Int -> Conduit a m (a, a)
 collocatesC before after = go initState
@@ -74,5 +73,5 @@ collocatesC before after = go initState
                     let (s', xs) = step before after s x'
                     yieldMany xs
                     go s'
-                Nothing -> yieldMany . finis' $ shift' s
+                Nothing -> yieldMany . finis' before $ shift' before s
 
