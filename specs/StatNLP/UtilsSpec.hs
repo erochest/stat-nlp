@@ -6,6 +6,7 @@
 module StatNLP.UtilsSpec where
 
 
+import qualified Data.List as L
 import           Conduit
 import           Control.Monad.Identity
 import qualified Data.Conduit.List      as CL
@@ -133,3 +134,11 @@ spec = do
                                               , (8, 6), (8, 7), (8, 9)
                                               , (9, 7), (9, 8)
                                               ] :: [(Int, Int)])
+
+    describe "ngrams" $ do
+        it "should return sublists of equal length." $
+            property $ \n (xs :: [Int]) ->
+                case map length (ngrams n xs) of
+                    []   -> True
+                    [_]  -> True
+                    y:ys -> all (== y) ys

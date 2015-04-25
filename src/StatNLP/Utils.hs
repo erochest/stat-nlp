@@ -8,6 +8,7 @@ import           Conduit
 import           Data.Foldable
 import           Data.Hashable
 import qualified Data.HashMap.Strict as M
+import qualified Data.List           as L
 import           Data.Sequence       (ViewL (..), ViewR (..), (<|), (><), (|>))
 import qualified Data.Sequence       as S
 import           Data.Traversable
@@ -87,3 +88,6 @@ collocatesC before after = go initState
                     yieldMany xs
                     go s'
                 Nothing -> yieldMany . finis' $ shift' s
+
+ngrams :: Int -> [a] -> [[a]]
+ngrams n = filter ((== n) . length) . map (take n) . L.tails

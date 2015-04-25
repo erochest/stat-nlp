@@ -8,6 +8,7 @@ import           Conduit
 import           Control.Monad.Identity
 import           Data.Bifunctor
 import qualified Data.Conduit.Text      as CT
+import           Data.Hashable
 import qualified Data.HashMap.Strict    as M
 import qualified Data.Text              as T
 import qualified Data.Text.Format       as F
@@ -21,7 +22,6 @@ import           StatNLP.Utils
 {-
  - **TODO**: Research Wittgenstein's *use theory of meaning*.
  -
- - TODO: n-gram generator
  - TODO: stopword filter
  - TODO: inverse index
  - TODO: concordance/kwic generator
@@ -44,6 +44,18 @@ main = do
     F.print "Token/type ratio = {}\n\n" . F.Only $ tokenTypeRatio freqs
 
     -- collocates
-    let cols = frequencies $ collocates 3 3 tokens
     putStrLn "Collocates"
-    freqReport 25 . M.fromList . fmap (first show) $ M.toList cols
+    freqShowReport 25 $ collocates 3 3 tokens
+
+    -- n-grams
+    putStrLn "\nBigrams"
+    freqShowReport 25 $ ngrams 2 tokens
+    putStrLn "\nTrigrams"
+    freqShowReport 25 $ ngrams 3 tokens
+
+freqShowReport :: (Eq a, Hashable a, Show a) => Int -> [a] -> IO ()
+freqShowReport n = freqReport n
+                 . M.fromList
+                 . fmap (first show)
+                 . M.toList
+                 . frequencies
