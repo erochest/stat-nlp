@@ -10,8 +10,10 @@ import           Data.Bifunctor
 import qualified Data.Conduit.Text      as CT
 import           Data.Hashable
 import qualified Data.HashMap.Strict    as M
+import qualified Data.HashSet           as S
 import qualified Data.Text              as T
 import qualified Data.Text.Format       as F
+import qualified Data.Text.IO           as TIO
 import           Data.Traversable
 import           Taygeta.Tokenizer      (regexTokenizer)
 
@@ -22,19 +24,26 @@ import           StatNLP.Utils
 {-
  - **TODO**: Research Wittgenstein's *use theory of meaning*.
  -
- - TODO: stopword filter
  - TODO: inverse index
  - TODO: concordance/kwic generator
  - TODO: kwic frequency tree
 -}
 
+tokenize :: PlainTokenizer
+tokenize = regexTokenizer "[\\p{L}\\p{M}]+"
+
 main :: IO ()
 main = do
+    -- stopwords
+    stopwords <-  S.fromList . map T.toLower . tokenize
+              <$> TIO.readFile "corpora/stopwords/english"
+
     -- tokens
     tokens <- runResourceT $  stdinC
                            $= CT.linesBounded (2^30)
-                           $= concatMapC (regexTokenizer "[\\p{L}\\p{M}]+")
+                           $= concatMapC tokenize
                            $= mapC T.toLower
+                           $= filterC (not . (`S.member` stopwords))
                            $$ sinkList
 
     -- frequencies
