@@ -28,3 +28,6 @@ tokenTypeRatio fm = fromIntegral (sum (M.elems fm))
 
 ngrams :: Int -> [a] -> [[a]]
 ngrams n = filter ((== n) . length) . map (take n) . L.tails
+
+ngramsC :: Monad m => Int -> Conduit a m [a]
+ngramsC n = slidingWindowC n

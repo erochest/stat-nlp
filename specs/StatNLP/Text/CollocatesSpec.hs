@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 
 
 module StatNLP.Text.CollocatesSpec where
@@ -16,6 +17,16 @@ spec :: Spec
 spec = do
     describe "collocates" $ do
         let input = [0..9] :: [Int]
+        {- -- It should, but I don't know what it would be.
+         - it "should have a relationship between its input and output lengths." $
+         -     property $ \before after (xs :: [Int]) ->
+         -         let before'  = max (length xs) before
+         -             after'   = max (length xs) after
+         -             expected = length xs * (before' + after')
+         -                      - sum ([0..before'] :: [Int])
+         -                      - sum ([0..after']  :: [Int])
+         -         in  length (collocates before' after' xs) == max 0 expected
+         -}
         it "should work properly on short inputs." $
             collocates 1 1 [1, 2] `shouldBe` [(1, 2), (2, 1)]
         it "should output items before its center." $
