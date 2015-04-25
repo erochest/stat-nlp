@@ -1,7 +1,7 @@
 {-# LANGUAGE TupleSections #-}
 
 
-module StatNLP.Utils where
+module StatNLP.Text.Utils where
 
 
 import           Conduit

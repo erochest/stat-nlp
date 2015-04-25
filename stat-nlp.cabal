@@ -17,8 +17,9 @@ cabal-version:       >=1.10
 
 library
   exposed-modules:     StatNLP.Output
+                     -- , StatNLP.Text.Collocates
+                     , StatNLP.Text.Utils
                      , StatNLP.Types
-                     , StatNLP.Utils
   -- other-modules:       
   -- other-extensions:    
   build-depends:       base >=4.8 && <5

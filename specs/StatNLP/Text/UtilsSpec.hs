@@ -3,7 +3,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 
-module StatNLP.UtilsSpec where
+module StatNLP.Text.UtilsSpec where
 
 
 import qualified Data.List as L
@@ -16,7 +16,7 @@ import qualified Data.HashMap.Strict    as M
 import           Test.Hspec
 import           Test.QuickCheck
 
-import           StatNLP.Utils
+import           StatNLP.Text.Utils
 
 
 instance (Eq k, Hashable k, Arbitrary k, Arbitrary v) => Arbitrary (M.HashMap k v) where
