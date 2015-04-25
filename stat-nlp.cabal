@@ -17,7 +17,7 @@ cabal-version:       >=1.10
 
 library
   exposed-modules:     StatNLP.Output
-                     -- , StatNLP.Text.Collocates
+                     , StatNLP.Text.Collocates
                      , StatNLP.Text.Utils
                      , StatNLP.Types
   -- other-modules:       

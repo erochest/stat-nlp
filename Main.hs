@@ -18,7 +18,7 @@ import           Data.Traversable
 import           Taygeta.Tokenizer      (regexTokenizer)
 
 import           StatNLP.Output
--- import           StatNLP.Text.Collocates
+import           StatNLP.Text.Collocates
 import           StatNLP.Text.Utils
 import           StatNLP.Types
 
