@@ -25,9 +25,7 @@ import           StatNLP.Types
 {-
  - **TODO**: Research Wittgenstein's *use theory of meaning*.
  -
- - TODO: inverse index
  - TODO: concordance/kwic generator
- - TODO: kwic frequency tree
 -}
 
 tokenize :: PlainTokenizer
