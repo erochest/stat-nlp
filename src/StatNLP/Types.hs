@@ -3,16 +3,21 @@
 
 
 module StatNLP.Types
-    ( PlainToken
+    ( Corpus(..)
+    , Cache
+    , DocumentId
+    , Document
+    , Index(..)
+    , PlainToken
+    , LinePos(..)
+    , DocumentPos
+
     , PlainTokenizer
     , Tokenizer
     , FreqMap
-    , Index(..)
     , Tag
     , Token(..)
     , Line
-    , Document
-    , LinePos(..)
     , KwicNode(..)
     ) where
 
@@ -25,7 +30,6 @@ import qualified Data.Text            as T
 import           Taygeta.Types        (PlainToken, PlainTokenizer, Tokenizer)
 
 
--- TODO: Corpus as a collection of documents, metadata, inverse index
 -- TODO: Document as optional source, tags, full text, tokens, other?
 -- TODO: Token as norm, tags, and slice into full text (start and end pos)
 -- TODO: Norms are cached in order to remove duplicate memory
@@ -33,10 +37,18 @@ import           Taygeta.Types        (PlainToken, PlainTokenizer, Tokenizer)
 -- TODO: Kwic as line context
 -- TODO: concordance as Kwic for all types
 
-type FreqMap a    = M.HashMap a Int
+type FreqMap a  = M.HashMap a Int
+type DocumentId = T.Text
+type Tag        = T.Text
+type Cache a    = M.HashMap a a
+
 newtype Index a p = Index { unIndex :: M.HashMap a [p] }
 
-type Tag = T.Text
+data Corpus = Corpus
+            { corpusDocuments  :: !(M.HashMap DocumentId Document)
+            , corpusTokenCache :: !(Cache PlainToken)
+            , corpusIndex      :: !(Index PlainToken DocumentPos)
+            }
 
 data Token p = Token
              { tokenRaw  :: !PlainToken
@@ -54,6 +66,8 @@ data LinePos = LinePos
              { posLine :: !Int
              , posCol  :: !Int
              } deriving (Eq, Show)
+
+type DocumentPos = (DocumentId, LinePos)
 
 type Line     = T.Text
 type Document = [Line]
