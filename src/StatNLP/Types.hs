@@ -30,6 +30,8 @@ import           Taygeta.Types        (PlainToken, PlainTokenizer, Tokenizer)
 -- TODO: Token as norm, tags, and slice into full text (start and end pos)
 -- TODO: Norms are cached in order to remove duplicate memory
 -- TODO: Line context type that is a comonad/ring buffer
+-- TODO: Kwic as line context
+-- TODO: concordance as Kwic for all types
 
 type FreqMap a    = M.HashMap a Int
 newtype Index a p = Index { unIndex :: M.HashMap a [p] }
