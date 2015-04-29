@@ -17,6 +17,8 @@ cabal-version:       >=1.10
 
 library
   exposed-modules:     StatNLP.Output
+                     -- TODO: , StatNLP.Corpus
+                     -- TODO: , StatNLP.Document
                      , StatNLP.Output.Kwic
                      , StatNLP.Text.Collocates
                      , StatNLP.Text.Index

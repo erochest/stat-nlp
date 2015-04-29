@@ -6,7 +6,7 @@ module StatNLP.Types
     ( Corpus(..)
     , Cache
     , DocumentId
-    , Document
+    , Document(..)
     , Index(..)
     , PlainToken
     , LinePos(..)
@@ -24,13 +24,13 @@ module StatNLP.Types
 
 import           Conduit
 import           Data.Foldable
+import qualified Data.HashSet as S
 import qualified Data.HashMap.Strict  as M
 import           Data.MonoTraversable
 import qualified Data.Text            as T
 import           Taygeta.Types        (PlainToken, PlainTokenizer, Tokenizer)
 
 
--- TODO: Document as optional source, tags, full text, tokens, other?
 -- TODO: Token as norm, tags, and slice into full text (start and end pos)
 -- TODO: Norms are cached in order to remove duplicate memory
 -- TODO: Line context type that is a comonad/ring buffer
@@ -49,6 +49,13 @@ data Corpus = Corpus
             , corpusTokenCache :: !(Cache PlainToken)
             , corpusIndex      :: !(Index PlainToken DocumentPos)
             }
+
+data Document = Document
+              { documentId     :: !DocumentId
+              , documentTags   :: !(S.HashSet Tag)
+              , documentText   :: !T.Text
+              , documentTokens :: ![Token LinePos]
+              }
 
 data Token p = Token
              { tokenRaw  :: !PlainToken
@@ -70,7 +77,6 @@ data LinePos = LinePos
 type DocumentPos = (DocumentId, LinePos)
 
 type Line     = T.Text
-type Document = [Line]
 
 -- This tracks a line containing a hit and its immediate n lines of context.
 -- If hits occur within n lines of each other, their contexts are put
