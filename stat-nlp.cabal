@@ -17,6 +17,7 @@ cabal-version:       >=1.10
 
 library
   exposed-modules:     StatNLP.Output
+                     , StatNLP.Output.Kwic
                      , StatNLP.Text.Collocates
                      , StatNLP.Text.Index
                      , StatNLP.Text.Tokens
