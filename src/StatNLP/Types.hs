@@ -9,8 +9,8 @@ module StatNLP.Types
     , Document(..)
     , Index(..)
     , PlainToken
-    , LinePos(..)
     , DocumentPos
+    , SpanPos(..)
 
     , PlainTokenizer
     , Tokenizer
@@ -24,14 +24,13 @@ module StatNLP.Types
 
 import           Conduit
 import           Data.Foldable
-import qualified Data.HashSet as S
 import qualified Data.HashMap.Strict  as M
+import qualified Data.HashSet         as S
 import           Data.MonoTraversable
 import qualified Data.Text            as T
 import           Taygeta.Types        (PlainToken, PlainTokenizer, Tokenizer)
 
 
--- TODO: Token as norm, tags, and slice into full text (start and end pos)
 -- TODO: Norms are cached in order to remove duplicate memory
 -- TODO: Line context type that is a comonad/ring buffer
 -- TODO: Kwic as line context
@@ -54,27 +53,24 @@ data Document = Document
               { documentId     :: !DocumentId
               , documentTags   :: !(S.HashSet Tag)
               , documentText   :: !T.Text
-              , documentTokens :: ![Token LinePos]
+              , documentTokens :: ![Token SpanPos]
               }
 
 data Token p = Token
-             { tokenRaw  :: !PlainToken
-             , tokenNorm :: !PlainToken
+             { tokenNorm :: !PlainToken
              , tokenTag  :: !(Maybe Tag)
              , tokenPos  :: !p
              } deriving (Eq, Show, Functor)
+
+type DocumentPos = (DocumentId, SpanPos)
+
+data SpanPos = Span { spanStart :: !Int, spanEnd :: !Int }
+             deriving (Show, Eq)
 
 type instance Element (Token p) = T.Text
 
 instance MonoFunctor (Token p) where
     omap f token = token { tokenNorm = f (tokenNorm token) }
-
-data LinePos = LinePos
-             { posLine :: !Int
-             , posCol  :: !Int
-             } deriving (Eq, Show)
-
-type DocumentPos = (DocumentId, LinePos)
 
 type Line     = T.Text
 

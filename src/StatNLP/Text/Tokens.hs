@@ -12,17 +12,17 @@ import           Data.Text.ICU
 import           StatNLP.Types
 
 
-posTokenizer :: Regex -> Int -> Tokenizer (Token LinePos)
-posTokenizer re line = mapMaybe (matchToken line) . findAll re
+posTokenizer :: Regex -> Tokenizer (Token SpanPos)
+posTokenizer re = mapMaybe matchToken . findAll re
 
-tokenize :: Int -> Tokenizer (Token LinePos)
-tokenize line = posTokenizer (regex [UnicodeWord] "[\\p{L}\\p{M}]+") line
+tokenize :: Tokenizer (Token SpanPos)
+tokenize = posTokenizer (regex [UnicodeWord] "[\\p{L}\\p{M}]+")
 
-matchToken :: Int -> Match -> Maybe (Token LinePos)
-matchToken line g = Token <$> text
-                          <*> text
-                          <*> pure Nothing
-                          <*> (LinePos line . T.length <$> prefix 0 g)
+matchToken :: Match -> Maybe (Token SpanPos)
+matchToken g = Token <$> text
+                     <*> pure Nothing
+                     <*> (Span <$> fmap T.length (prefix 0 g)
+                               <*> fmap T.length text)
     where text = group 0 g
 
 normalize :: Token p -> Token p

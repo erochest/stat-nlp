@@ -11,5 +11,5 @@ import           StatNLP.Types
 inverseIndex :: (Hashable k, Eq k) => (a -> k) -> (a -> p) -> [a] -> Index k p
 inverseIndex key pos = Index . M.fromListWith (++) . map (key &&& (pure . pos))
 
-indexTokens :: [Token LinePos] -> Index PlainToken LinePos
+indexTokens :: [Token SpanPos] -> Index PlainToken SpanPos
 indexTokens = inverseIndex tokenNorm tokenPos
