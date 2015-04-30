@@ -22,6 +22,7 @@ module StatNLP.Types
 
 
 import           Data.Foldable
+import           Data.Hashable
 import qualified Data.HashMap.Strict  as M
 import qualified Data.HashSet         as S
 import           Data.MonoTraversable
@@ -39,6 +40,13 @@ type Tag        = T.Text
 type Cache a    = M.HashMap a a
 
 newtype Index a p = Index { unIndex :: M.HashMap a [p] }
+
+instance Functor (Index a) where
+    fmap f (Index m) = Index $ fmap (fmap f) m
+
+instance (Hashable a, Eq a) => Monoid (Index a p) where
+    mempty = Index mempty
+    mappend (Index a) (Index b) = Index $ M.unionWith mappend a b
 
 data Corpus = Corpus
             { corpusDocuments  :: !(M.HashMap DocumentId Document)

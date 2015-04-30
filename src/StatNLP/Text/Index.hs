@@ -1,3 +1,6 @@
+{-# LANGUAGE TupleSections #-}
+
+
 module StatNLP.Text.Index where
 
 
@@ -13,3 +16,6 @@ inverseIndex key pos = Index . M.fromListWith (++) . map (key &&& (pure . pos))
 
 indexTokens :: [Token SpanPos] -> Index PlainToken SpanPos
 indexTokens = inverseIndex tokenNorm tokenPos
+
+indexDocumentTokens :: DocumentId -> [Token SpanPos] -> Index PlainToken DocumentPos
+indexDocumentTokens dId ts = (dId,) <$> indexTokens ts

@@ -7,14 +7,15 @@ module Main where
 import           Control.Monad.Identity
 import           Data.Bifunctor
 import           Data.Hashable
-import qualified Data.HashMap.Strict    as M
-import qualified Data.HashSet           as S
-import qualified Data.Text              as T
-import qualified Data.Text.Format       as F
-import qualified Data.Text.IO           as TIO
+import qualified Data.HashMap.Strict     as M
+import qualified Data.HashSet            as S
+import qualified Data.Text               as T
+import qualified Data.Text.Format        as F
+import qualified Data.Text.IO            as TIO
 import           Data.Traversable
-import           Taygeta.Tokenizer      (regexTokenizer)
+import           Taygeta.Tokenizer       (regexTokenizer)
 
+import           StatNLP.Corpus
 import           StatNLP.Output
 import           StatNLP.Text.Collocates
 import           StatNLP.Text.Utils
