@@ -8,6 +8,7 @@ all: init test docs package
 
 init:
 	${CABAL} sandbox init
+	${CABAL} sandbox add-source ~/p/taygeta
 	make deps
 
 test: build
