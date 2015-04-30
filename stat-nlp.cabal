@@ -17,6 +17,7 @@ cabal-version:       >=1.10
 
 library
   exposed-modules:     StatNLP.Output
+                     -- TODO: , StatNLP.Context
                      -- TODO: , StatNLP.Corpus
                      -- TODO: , StatNLP.Document
                      , StatNLP.Output.Kwic
@@ -28,6 +29,7 @@ library
   -- other-modules:       
   -- other-extensions:    
   build-depends:       base >=4.8 && <5
+                     , comonad
                      , conduit-combinators
                      , containers
                      , hashable
@@ -68,9 +70,11 @@ test-suite stat-nlp-specs
   build-depends:         base
                        , stat-nlp
                        , QuickCheck
+                       , comonad
                        , conduit
                        , conduit-combinators
                        , conduit-extra
+                       , containers
                        , hashable
                        , hspec
                        , mtl

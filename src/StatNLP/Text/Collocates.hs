@@ -13,7 +13,7 @@ import           Data.Sequence    (ViewL (..), ViewR (..), (<|), (><), (|>))
 import qualified Data.Sequence    as S
 import           Data.Traversable
 
-import           StatNLP.Types
+import           StatNLP.Types hiding (left)
 
 
 type CollState a = (S.Seq a, Maybe a, S.Seq a)
