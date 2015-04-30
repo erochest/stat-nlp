@@ -14,6 +14,7 @@ import qualified Data.Sequence   as Seq
 import           Test.Hspec
 import           Test.QuickCheck
 
+import           StatNLP.Context
 import           StatNLP.Types
 
 
@@ -39,47 +40,33 @@ spec = do
             property $ \(c :: Context Int) ->
                 fmap ((* 2) . (+ 7)) c == (fmap (* 2) . fmap (+ 7)) c
 
-    describe "pushRight" $ do
+    describe "pushR" $ do
         it "should maintain the size of the left context." $
             property $ \(c :: Context Int) (xs :: [Int]) ->
-                length (contextBefore $ foldl' (flip pushRight) c xs) == contextBeforeN c
+                length (contextBefore $ foldl' (flip pushR) c xs) == contextBeforeN c
         it "should maintain the size of the right context." $
             property $ \(c :: Context Int) (xs :: [Int]) ->
-                length (contextAfter $ foldl' (flip pushRight) c xs) == contextAfterN c
+                length (contextAfter $ foldl' (flip pushR) c xs) == contextAfterN c
         it "should shift everything over one." $
-            (0 `pushRight` Context 2 2 [1, 2] 3 [4, 5]) `shouldBe` (Context 2 2 [0, 1] 2 [3, 4])
+            (0 `pushR` Context 2 2 [1, 2] 3 [4, 5]) `shouldBe` (Context 2 2 [0, 1] 2 [3, 4])
 
-    describe "pushLeft" $ do
+    describe "pushL" $ do
         it "should maintain the size of the left context." $
             property $ \(c :: Context Int) (xs :: [Int]) ->
-                length (contextBefore $ foldl' pushLeft c xs) == contextBeforeN c
+                length (contextBefore $ foldl' pushL c xs) == contextBeforeN c
         it "should maintain the size of the right context." $
             property $ \(c :: Context Int) (xs :: [Int]) ->
-                length (contextAfter $ foldl' pushLeft c xs) == contextAfterN c
+                length (contextAfter $ foldl' pushL c xs) == contextAfterN c
         it "should shift everything over one." $
-            (Context 2 2 [1, 2] 3 [4, 5] `pushLeft` 6) `shouldBe` (Context 2 2 [2, 3] 4 [5, 6])
+            (Context 2 2 [1, 2] 3 [4, 5] `pushL` 6) `shouldBe` (Context 2 2 [2, 3] 4 [5, 6])
 
-    {-
-     - describe "Comonad" $ do
-     -     it "should satisfy extract . duplicate == id." $
-     -         property $ \(c :: Context Int) ->
-     -             (extract . duplicate) c == id c
-     -     it "should satisfy extract . fmap f == f . extract." $
-     -         property $ \(c :: Context Int) ->
-     -             (extract . fmap (*7)) c == ((*7) . extract) c
-     -     it "should satisfy fmap extract . duplicate == id." $
-     -         property $ \(c :: Context Int) ->
-     -             (fmap extract . duplicate) c == id c
-     -     it "should satisfy duplicate . duplicate == fmap duplicate . duplicate" $
-     -         property $ \(c :: Context Int) ->
-     -             (fmap duplicate . duplicate) c == (duplicate . duplicate) c
-     -     it "should satisfy duplicate = extend id." $
-     -         property $ \(c :: Context Int) ->
-     -             duplicate c == extend id c
-     -     it "should satisfy fmap (fmap f) . duplicate = duplicate . fmap f." $
-     -         property $ \(c :: Context Int) ->
-     -             (fmap (fmap (*4)) . duplicate) c == (duplicate . fmap (*4)) c
-     -     it "should satisfy extend f = fmap f . duplicate." $
-     -         property $ \(c :: Context Int) ->
-     -             extend sumc c == (fmap sumc . duplicate) c
-     -}
+    describe "shiftL" $ do
+        it "should shift to nothing on an empty context." $
+            shiftL (Context 2 2 [1, 2] 3 []) `shouldSatisfy` isNothing
+        it "should shift to something on an existing context." $
+            shiftL (Context 2 2 [1, 2] 3 [4]) `shouldSatisfy` isJust
+    describe "shiftR" $ do
+        it "should shift to nothing on an empty context." $
+            shiftR (Context 2 2 [] 1 [2, 3]) `shouldSatisfy` isNothing
+        it "should shift to something on an existing context." $
+            shiftR (Context 2 2 [1] 2 [3, 4]) `shouldSatisfy` isJust

@@ -16,13 +16,8 @@ module StatNLP.Types
     , FreqMap
     , Tag
     , Token(..)
+
     , Context(..)
-    , pushRight
-    , pushLeft
-    , left
-    , right
-    , trimLeft
-    , trimRight
     ) where
 
 
@@ -32,13 +27,11 @@ import           Data.Foldable
 import qualified Data.HashMap.Strict  as M
 import qualified Data.HashSet         as S
 import           Data.MonoTraversable
-import           Data.Sequence        (Seq, ViewL (..), ViewR (..), (<|), (|>))
-import qualified Data.Sequence        as Seq
+import           Data.Sequence        (Seq)
 import qualified Data.Text            as T
 import           Taygeta.Types        (PlainToken, PlainTokenizer, Tokenizer)
 
 
--- TODO: Line context type that is a comonad/ring buffer
 -- TODO: Kwic as line context
 -- TODO: concordance as Kwic for all types
 
@@ -89,50 +82,3 @@ data Context a = Context
 instance Functor Context where
     fmap f (Context b a before current after) =
         Context b a (fmap f before) (f current) (fmap f after)
-
-pushLeft :: Context a -> a -> Context a
-pushLeft (Context b a ls c rs) x =
-    case Seq.viewl rs of
-        EmptyL   -> Context b a ls' x rs
-        r :< rs' -> Context b a ls' r $ rs' |> x
-    where
-        ls' = (ls |> c) `trimLeft` b
-
-pushRight :: a -> Context a -> Context a
-pushRight x (Context b a ls c rs) =
-    case Seq.viewr ls of
-        EmptyR   -> Context b a ls x rs'
-        ls' :> l -> Context b a (x <| ls') l rs'
-    where
-        rs' = (c <| rs) `trimRight` a
-
-trimLeft :: Seq a -> Int -> Seq a
-trimLeft ss n | Seq.length ss > n = case Seq.viewl ss of
-                                        EmptyL   -> ss
-                                        _ :< ss' -> trimLeft ss' n
-              | otherwise         = ss
-
-trimRight :: Seq a -> Int -> Seq a
-trimRight ss n | Seq.length ss > n = case Seq.viewr ss of
-                                         EmptyR   -> ss
-                                         ss' :> _ -> trimRight ss' n
-               | otherwise         = ss
-
-left, right :: Context a -> Maybe (Context a)
-left = undefined
-right = undefined
-
-{-
- - instance Comonad Context where
- -     extract (Context _ _ _ a _) = a
- -     duplicate c =
- -         c { contextBefore = tail $ iterate left c
- -           , contextView   = c
- -           , contextAfter  = tail $ iterate right c
- -           }
- -}
-
--- This tracks a line containing a hit and its immediate n lines of context.
--- If hits occur within n lines of each other, their contexts are put
--- together and returned as a single node.
-data KwicNode = KwicNode
