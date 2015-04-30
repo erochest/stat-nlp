@@ -4,10 +4,8 @@
 module Main where
 
 
-import           Conduit
 import           Control.Monad.Identity
 import           Data.Bifunctor
-import qualified Data.Conduit.Text      as CT
 import           Data.Hashable
 import qualified Data.HashMap.Strict    as M
 import qualified Data.HashSet           as S
@@ -38,12 +36,15 @@ main = do
               <$> TIO.readFile "corpora/stopwords/english"
 
     -- tokens
-    tokens <- runResourceT $  stdinC
-                           $= CT.linesBounded (2^30)
-                           $= concatMapC tokenize
-                           $= mapC T.toLower
-                           $= filterC (not . (`S.member` stopwords))
-                           $$ sinkList
+    {-
+     - tokens <- runResourceT $  stdinC
+     -                        $= CT.linesBounded (2^30)
+     -                        $= concatMapC tokenize
+     -                        $= mapC T.toLower
+     -                        $= filterC (not . (`S.member` stopwords))
+     -                        $$ sinkList
+     -}
+    let tokens = [] :: [PlainToken]
 
     -- frequencies
     let freqs = frequencies tokens

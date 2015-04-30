@@ -6,9 +6,7 @@
 module StatNLP.Text.UtilsSpec where
 
 
-import           Conduit
 import           Control.Monad.Identity
-import qualified Data.Conduit.List      as CL
 import           Data.Hashable
 import qualified Data.HashMap.Strict    as M
 import qualified Data.List              as L
@@ -49,22 +47,3 @@ spec = do
                                                   , [4, 5, 6], [5, 6, 7]
                                                   , [6, 7, 8], [7, 8, 9]
                                                   ]
-
-    describe "ngramsC" $ do
-        let ngrams' n i =  runIdentity
-                        .  runConduit
-                        $  CL.sourceList i
-                        $= ngramsC n
-                        $$ sinkList
-        it "should return sublists of equal length." $
-            property $ \n (xs :: [Int]) ->
-                case map length (ngrams' n xs) of
-                    []   -> True
-                    [_]  -> True
-                    y:ys -> all (== y) ys
-        it "should return all the sublists of a sequence." $
-            ngrams' 3 ([0..9] :: [Int]) `shouldBe` [ [0, 1, 2], [1, 2, 3]
-                                                   , [2, 3, 4], [3, 4, 5]
-                                                   , [4, 5, 6], [5, 6, 7]
-                                                   , [6, 7, 8], [7, 8, 9]
-                                                   ]

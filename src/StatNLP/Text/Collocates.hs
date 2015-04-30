@@ -3,11 +3,9 @@
 
 module StatNLP.Text.Collocates
     ( collocates
-    , collocatesC
     ) where
 
 
-import           Conduit
 import           Data.Foldable
 import           Data.Sequence    (ViewL (..), ViewR (..), (<|), (><), (|>))
 import qualified Data.Sequence    as S
@@ -62,16 +60,3 @@ finis' :: Int -> CollState a -> [(a, a)]
 finis' before s@(_, Nothing, zs) | S.null zs = []
                                  | otherwise = finis' before (shift' before s)
 finis' before s = pairs s ++ finis' before (shift' before s)
-
-collocatesC :: Monad m => Int -> Int -> Conduit a m (a, a)
-collocatesC before after = go initState
-    where
-        go s = do
-            x <- await
-            case x of
-                Just x' -> do
-                    let (s', xs) = step before after s x'
-                    yieldMany xs
-                    go s'
-                Nothing -> yieldMany . finis' before $ shift' before s
-

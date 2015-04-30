@@ -21,8 +21,6 @@ module StatNLP.Types
     ) where
 
 
-import           Conduit
-import           Control.Comonad
 import           Data.Foldable
 import qualified Data.HashMap.Strict  as M
 import qualified Data.HashSet         as S

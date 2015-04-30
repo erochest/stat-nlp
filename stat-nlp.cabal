@@ -30,7 +30,6 @@ library
   -- other-extensions:    
   build-depends:       base >=4.8 && <5
                      , comonad
-                     , conduit-combinators
                      , containers
                      , hashable
                      , mono-traversable
@@ -49,9 +48,6 @@ executable stat-nlp
   build-depends:       base >=4.8 && <5
                      , stat-nlp
                      , bifunctors
-                     , conduit
-                     , conduit-combinators
-                     , conduit-extra
                      , hashable
                      , mtl
                      , taygeta
@@ -71,9 +67,6 @@ test-suite stat-nlp-specs
                        , stat-nlp
                        , QuickCheck
                        , comonad
-                       , conduit
-                       , conduit-combinators
-                       , conduit-extra
                        , containers
                        , hashable
                        , hspec
