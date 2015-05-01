@@ -79,7 +79,7 @@ data SpanPos = Span { spanStart :: !Int, spanEnd :: !Int }
 
 instance Hashable SpanPos
 
-data LinePos = Line { posLine :: !Int, posCol :: !Int }
+data LinePos = Line { posLine :: !Int, posStart :: !Int, posEnd :: !Int }
              deriving (Show, Eq, Generic)
 
 instance Hashable LinePos

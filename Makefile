@@ -18,7 +18,7 @@ specs: build
 	./dist/build/stat-nlp-specs/stat-nlp-specs
 
 run:
-	${CABAL} run corpora/gutenberg/blake-poems.txt
+	${CABAL} run corpora/gutenberg/
 
 
 # docs:

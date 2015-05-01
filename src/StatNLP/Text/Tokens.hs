@@ -1,3 +1,4 @@
+{-# LANGUAGE NamedFieldPuns    #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 
@@ -17,8 +18,20 @@ import           StatNLP.Types
 posTokenizer :: Regex -> Tokenizer (Token SpanPos)
 posTokenizer re = mapMaybe matchToken . findAll re
 
-tokenize :: Tokenizer (Token SpanPos)
-tokenize = posTokenizer (regex [UnicodeWord] "[\\p{L}\\p{M}]+")
+lineTokenizer :: Regex -> Int -> Tokenizer (Token LinePos)
+lineTokenizer re offset input =
+    concatMap (uncurry (map . linePos))
+        . zipWith (curry (fmap (posTokenizer re))) [0..]
+        $ T.lines input
+    where
+        linePos line t@Token{tokenPos} =
+            t { tokenPos = Line (offset + line)
+                                (spanStart tokenPos)
+                                (spanEnd tokenPos)
+              }
+
+tokenize :: Tokenizer (Token LinePos)
+tokenize = lineTokenizer (regex [UnicodeWord] "[\\p{L}\\p{M}]+") 0
 
 matchToken :: Match -> Maybe (Token SpanPos)
 matchToken g = Token <$> text
