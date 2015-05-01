@@ -17,9 +17,9 @@ import           StatNLP.Types    hiding (left)
 
 type CollState a = (S.Seq a, Maybe a, S.Seq a)
 
-collocates :: (Foldable t, Traversable t) => Int -> Int -> t a -> V.Vector (a, a)
-collocates before after = V.fromList
-                        . toList
+collocates :: (Foldable t, Traversable t)
+           => Int -> Int -> t a -> [(a, a)]
+collocates before after = toList
                         . uncurry (finis before)
                         . fmap fold
                         . mapAccumL (step before after) initState

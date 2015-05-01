@@ -3,8 +3,10 @@
 
 module StatNLP.Corpus
     ( initCorpus
+    , makeCorpus
     , addDocument
     , loadCorpusDirectory
+    , documentTokens
     ) where
 
 
@@ -13,6 +15,7 @@ import qualified Data.HashMap.Strict       as M
 import           Data.Monoid
 import qualified Data.Text                 as T
 import           Data.Text.ICU
+import qualified Data.Vector               as V
 import           Filesystem
 import           Filesystem.Path.CurrentOS
 import           Prelude                   hiding (FilePath)
@@ -24,29 +27,31 @@ import           StatNLP.Types
 import           StatNLP.Utils
 
 
-initCorpus :: Corpus p
-initCorpus = Corpus M.empty M.empty $ Index M.empty
+initCorpus :: Tokenizer (Token p) -> DocumentReader -> Corpus p
+initCorpus t r = Corpus M.empty t r
 
-addDocument :: Corpus p -> Document p -> (Corpus p, Document p)
-addDocument Corpus{..} d = (c, d { documentTokens = tokens })
+makeCorpus :: Foldable t
+           => Tokenizer (Token p) -> DocumentReader -> t Document -> Corpus p
+makeCorpus tokenizer reader docs =
+    Corpus (foldl' insert M.empty docs) tokenizer reader
     where
-        (cache, tokens) = cacheTokens corpusTokenCache $ documentTokens d
-        index = indexDocumentTokens (documentId d) (documentTokens d)
-        c = Corpus (M.insert (documentId d) d corpusDocuments)
-                   cache
-                   $ index <> corpusIndex
+        insert m d = M.insert (documentKey d) d m
 
-addDocument' :: Corpus p -> Document p -> Corpus p
-addDocument' c d = fst $ addDocument c d
+addDocument :: Corpus p -> Document -> Corpus p
+addDocument c d =
+    c { corpusDocuments = M.insert (documentKey d) d (corpusDocuments c) }
 
-loadCorpusDirectory :: (FilePath -> IO T.Text) -> Tokenizer (Token p) -> FilePath
+loadCorpusDirectory :: Tokenizer (Token p) -> DocumentReader -> FilePath
                     -> IO (Corpus p)
-loadCorpusDirectory reader tokenizer root =
-        fmap (foldl' addDocument' initCorpus)
-    .   mapM (loadDocument reader tokenizer)
-    =<< walk
+loadCorpusDirectory tokenizer reader root =
+        fmap (makeCorpus tokenizer reader . map initDocument)
+    .   walk
     =<< canonicalizePath root
     where
         walk filename = do
             isDir <- isDirectory filename
             if isDir then walkDirectory filename else return [filename]
+
+documentTokens :: Corpus p -> Document -> IO [Token p]
+documentTokens Corpus{..} d = do
+    concatMap corpusTokenizer <$> corpusReader d

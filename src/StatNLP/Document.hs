@@ -1,6 +1,7 @@
 module StatNLP.Document where
 
 
+import           Data.Either
 import qualified Data.HashSet              as S
 import qualified Data.Text                 as T
 import           Data.Text.ICU
@@ -13,11 +14,8 @@ import           StatNLP.Text.Tokens
 import           StatNLP.Types
 
 
-loadDocument :: (FilePath -> IO T.Text) -> Tokenizer (Token p) -> FilePath
-             -> IO (Document p)
-loadDocument reader tokenizer input =
-    Document dId S.empty . V.fromList . tokenizer <$> reader input
-    where
-        dId = case toText input of
-                  Left a  -> a
-                  Right a -> a
+initDocument :: DocumentId -> Document
+initDocument input = Document input S.empty
+
+documentKey :: Document -> T.Text
+documentKey = either id id . toText . documentId

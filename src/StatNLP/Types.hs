@@ -18,30 +18,35 @@ module StatNLP.Types
     , FreqMap
     , Tag
     , Token(..)
+    , DocumentReader
 
     , Context(..)
     ) where
 
 
+import           Control.DeepSeq
 import           Data.Foldable
 import           Data.Hashable
-import qualified Data.HashMap.Strict  as M
-import qualified Data.HashSet         as S
+import qualified Data.HashMap.Strict       as M
+import qualified Data.HashSet              as S
 import           Data.MonoTraversable
-import           Data.Sequence        (Seq)
-import qualified Data.Text            as T
-import qualified Data.Vector          as V
+import           Data.Sequence             (Seq)
+import qualified Data.Text                 as T
+import qualified Data.Vector               as V
+import           Filesystem.Path.CurrentOS
 import           GHC.Generics
-import           Taygeta.Types        (PlainToken, PlainTokenizer, Tokenizer)
+import           Prelude                   hiding (FilePath)
+import           Taygeta.Types             (PlainToken, PlainTokenizer, Tokenizer)
 
 
 -- TODO: Kwic as line context
 -- TODO: concordance as Kwic for all types
 
-type FreqMap a  = M.HashMap a Int
-type DocumentId = T.Text
-type Tag        = T.Text
-type Cache a    = M.HashMap a a
+type FreqMap a      = M.HashMap a Int
+type DocumentId     = FilePath
+type Tag            = T.Text
+type Cache a        = M.HashMap a a
+type DocumentReader = Document -> IO [T.Text]
 
 newtype Index a p = Index { unIndex :: M.HashMap a [p] }
 
@@ -53,16 +58,17 @@ instance (Hashable a, Eq a) => Monoid (Index a p) where
     mappend (Index a) (Index b) = Index $ M.unionWith mappend a b
 
 data Corpus p = Corpus
-              { corpusDocuments  :: !(M.HashMap DocumentId (Document p))
-              , corpusTokenCache :: !(Cache PlainToken)
-              , corpusIndex      :: !(Index PlainToken (DocumentPos p))
+              { corpusDocuments  :: !(M.HashMap T.Text Document)
+              , corpusTokenizer  :: !(Tokenizer (Token p))
+              , corpusReader     :: !DocumentReader
               }
 
-data Document p = Document
-                { documentId     :: !DocumentId
-                , documentTags   :: !(S.HashSet Tag)
-                , documentTokens :: !(V.Vector (Token p))
-                }
+data Document = Document
+              { documentId     :: !DocumentId
+              , documentTags   :: !(S.HashSet Tag)
+              } deriving (Generic)
+
+instance NFData Document
 
 data Token p = Token
              { tokenNorm :: !PlainToken
@@ -72,6 +78,8 @@ data Token p = Token
 
 instance Hashable p => Hashable (Token p)
 
+instance NFData p => NFData (Token p)
+
 type DocumentPos p = (DocumentId, p)
 
 data SpanPos = Span { spanStart :: !Int, spanEnd :: !Int }
@@ -79,10 +87,14 @@ data SpanPos = Span { spanStart :: !Int, spanEnd :: !Int }
 
 instance Hashable SpanPos
 
+instance NFData SpanPos
+
 data LinePos = Line { posLine :: !Int, posStart :: !Int, posEnd :: !Int }
              deriving (Show, Eq, Generic)
 
 instance Hashable LinePos
+
+instance NFData LinePos
 
 type instance Element (Token p) = T.Text
 
