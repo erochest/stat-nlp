@@ -10,14 +10,18 @@ import           Data.Foldable
 import           Data.Sequence    (ViewL (..), ViewR (..), (<|), (><), (|>))
 import qualified Data.Sequence    as S
 import           Data.Traversable
+import qualified Data.Vector      as V
 
-import           StatNLP.Types hiding (left)
+import           StatNLP.Types    hiding (left)
 
 
 type CollState a = (S.Seq a, Maybe a, S.Seq a)
 
-collocates :: Int -> Int -> [a] -> [(a, a)]
-collocates before after = uncurry (finis before)
+collocates :: (Foldable t, Traversable t) => Int -> Int -> t a -> V.Vector (a, a)
+collocates before after = V.fromList
+                        . toList
+                        . uncurry (finis before)
+                        . fmap fold
                         . mapAccumL (step before after) initState
 
 initState :: CollState a
@@ -29,7 +33,7 @@ left empty nonEmpty seq =
         EmptyL  -> (empty, Nothing, S.empty)
         x :< xs -> (nonEmpty, Just x, xs)
 
-step :: Int -> Int -> CollState a -> a -> (CollState a, [(a, a)])
+step :: Int -> Int -> CollState a -> a -> (CollState a, S.Seq (a, a))
 step before after s a = let next = shift before after s a
                         in  (next, pairs next)
 
@@ -49,14 +53,14 @@ trim n ss | S.length ss > n = case S.viewl ss of
                                   (_ :< ss') -> ss'
           | otherwise       = ss
 
-pairs :: CollState a -> [(a, a)]
-pairs (as, Just c, zs) = toList . fmap (c,) $ as >< zs
-pairs (_, Nothing, _)  = []
+pairs :: CollState a -> S.Seq (a, a)
+pairs (as, Just c, zs) = fmap (c,) $ as >< zs
+pairs (_, Nothing, _)  = S.empty
 
-finis :: Int -> CollState a -> [[(a, a)]] -> [(a, a)]
-finis before s xs = concat xs ++ finis' before (shift' before s)
+finis :: Int -> CollState a -> S.Seq (a, a) -> S.Seq (a, a)
+finis before s xs = xs >< finis' before (shift' before s)
 
-finis' :: Int -> CollState a -> [(a, a)]
-finis' before s@(_, Nothing, zs) | S.null zs = []
+finis' :: Int -> CollState a -> S.Seq (a, a)
+finis' before s@(_, Nothing, zs) | S.null zs = S.empty
                                  | otherwise = finis' before (shift' before s)
-finis' before s = pairs s ++ finis' before (shift' before s)
+finis' before s = pairs s >< finis' before (shift' before s)

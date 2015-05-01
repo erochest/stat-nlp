@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedLists     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 
@@ -25,7 +26,7 @@ spec = do
          -         in  length (collocates before' after' xs) == max 0 expected
          -}
         it "should work properly on short inputs." $
-            collocates 1 1 [1, 2] `shouldBe` [(1, 2), (2, 1)]
+            collocates 1 1 ([1 , 2] :: [Int]) `shouldBe` [(1, 2), (2, 1)]
         it "should output items before its center." $
             collocates 1 0 input `shouldBe` [ (1, 0), (2, 1), (3, 2), (4, 3), (5, 4)
                                             , (6, 5), (7, 6), (8, 7), (9, 8)

@@ -19,44 +19,61 @@ library
   exposed-modules:     StatNLP.Output
                      , StatNLP.Context
                      , StatNLP.Corpus
-                     -- TODO: , StatNLP.Document
+                     , StatNLP.Document
                      , StatNLP.Output.Kwic
                      , StatNLP.Text.Collocates
                      , StatNLP.Text.Index
                      , StatNLP.Text.Tokens
                      , StatNLP.Text.Utils
                      , StatNLP.Types
+                     , StatNLP.Utils
   -- other-modules:       
   -- other-extensions:    
   build-depends:       base >=4.8 && <5
                      , comonad
+                     , conduit
+                     , conduit-combinators
+                     , conduit-extra
                      , containers
                      , hashable
                      , mono-traversable
+                     , system-fileio
+                     , system-filepath
                      , taygeta
                      , text
                      , text-format
                      , text-icu
                      , unordered-containers
+                     , vector
   hs-source-dirs:      src
   default-language:    Haskell2010
 
 executable stat-nlp
   main-is:             Main.hs
-  -- other-modules:       
+  other-modules:       Opts
   -- other-extensions:    
   build-depends:       base >=4.8 && <5
                      , stat-nlp
                      , bifunctors
+                     , conduit
+                     , conduit-combinators
+                     , conduit-extra
                      , hashable
                      , mtl
+                     , optparse-applicative
+                     , system-fileio
+                     , system-filepath
                      , taygeta
                      , text
                      , text-format
                      , unordered-containers
+                     , vector
   -- hs-source-dirs:      .
   default-language:    Haskell2010
-
+  ghc-options:         -O2
+                       -threaded
+                       -fprof-auto
+                       "-with-rtsopts=-N -p -s -h -i0.1"
 
 test-suite stat-nlp-specs
   type:                exitcode-stdio-1.0
@@ -67,6 +84,9 @@ test-suite stat-nlp-specs
                        , stat-nlp
                        , QuickCheck
                        , comonad
+                       , conduit
+                       , conduit-combinators
+                       , conduit-extra
                        , containers
                        , hashable
                        , hspec

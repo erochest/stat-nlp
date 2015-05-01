@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TypeFamilies  #-}
 
 
@@ -28,6 +29,8 @@ import qualified Data.HashSet         as S
 import           Data.MonoTraversable
 import           Data.Sequence        (Seq)
 import qualified Data.Text            as T
+import qualified Data.Vector          as V
+import           GHC.Generics
 import           Taygeta.Types        (PlainToken, PlainTokenizer, Tokenizer)
 
 
@@ -58,19 +61,23 @@ data Document = Document
               { documentId     :: !DocumentId
               , documentTags   :: !(S.HashSet Tag)
               , documentText   :: !T.Text
-              , documentTokens :: ![Token SpanPos]
+              , documentTokens :: !(V.Vector (Token SpanPos))
               }
 
 data Token p = Token
              { tokenNorm :: !PlainToken
              , tokenTag  :: !(Maybe Tag)
              , tokenPos  :: !p
-             } deriving (Eq, Show, Functor)
+             } deriving (Eq, Show, Functor, Generic)
+
+instance Hashable p => Hashable (Token p)
 
 type DocumentPos = (DocumentId, SpanPos)
 
 data SpanPos = Span { spanStart :: !Int, spanEnd :: !Int }
-             deriving (Show, Eq)
+             deriving (Show, Eq, Generic)
+
+instance Hashable SpanPos
 
 type instance Element (Token p) = T.Text
 

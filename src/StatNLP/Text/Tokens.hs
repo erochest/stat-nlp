@@ -30,7 +30,8 @@ matchToken g = Token <$> text
 normalize :: Token p -> Token p
 normalize = omap T.toLower
 
-cacheTokens :: Cache PlainToken -> [Token a] -> (Cache PlainToken, [Token a])
+cacheTokens :: Traversable t
+            => Cache PlainToken -> t (Token a) -> (Cache PlainToken, t (Token a))
 cacheTokens c ts = mapAccumL cacheToken c ts
     where
         cacheToken c t =

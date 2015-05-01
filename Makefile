@@ -18,7 +18,7 @@ specs: build
 	./dist/build/stat-nlp-specs/stat-nlp-specs
 
 run:
-	${CABAL} run corpora/gutenberg/
+	${CABAL} run corpora/gutenberg/README
 
 
 # docs:
@@ -56,7 +56,7 @@ deps: clean
 	make configure
 
 stat-nlp.ps: stat-nlp.hp
-	hs2ps -e8in -c $<
+	hp2ps -e8in -c $<
 
 build:
 	${CABAL} build
