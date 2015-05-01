@@ -17,6 +17,7 @@ import           StatNLP.Types    hiding (left)
 
 type CollState a = (S.Seq a, Maybe a, S.Seq a)
 
+-- TODO: Need to load criterion and optimize this.
 collocates :: (Foldable t, Traversable t)
            => Int -> Int -> t a -> [(a, a)]
 collocates before after = toList
