@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns      #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 
@@ -51,23 +52,23 @@ main = do
                   . fmap normalize
                   . tokenize
     corpus <- loadCorpusDirectory reader tokenizer corpusPath
+    let !tokens = fmap tokenNorm
+                . mconcat
+                . map documentTokens
+                . M.elems
+                $ corpusDocuments corpus
 
     -- frequencies
-    let freqs = frequencies
-              . fmap tokenNorm
-              . mconcat
-              . map documentTokens
-              . M.elems
-              $ corpusDocuments corpus
     putStrLn "Frequencies"
+    let freqs = frequencies tokens
     freqReport 25 freqs
     F.print "Token/type ratio = {}\n\n" . F.Only $ tokenTypeRatio freqs
 
-    -- collocates
 {-
+ -     -- collocates
  -     putStrLn "Collocates"
  -     freqShowReport 25 $ collocates 3 3 tokens
- -
+ - 
  -     -- n-grams
  -     let tokenList = V.toList tokens
  -     putStrLn "\nBigrams"
