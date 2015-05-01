@@ -4,11 +4,11 @@ module StatNLP.Output.Kwic where
 import StatNLP.Types
 
 
-kwic :: PlainToken -> Index PlainToken SpanPos -> Int -> Document -> ()
+kwic :: PlainToken -> Index PlainToken p -> Int -> Document p -> ()
 kwic = undefined
 
-posKwic :: PlainToken -> SpanPos -> Int -> Document -> ()
+posKwic :: PlainToken -> p -> Int -> Document p -> ()
 posKwic = undefined
 
-concordance :: Index PlainToken SpanPos -> Int -> Document -> [(PlainToken, ())]
+concordance :: Index PlainToken p -> Int -> Document p -> [(PlainToken, ())]
 concordance = undefined

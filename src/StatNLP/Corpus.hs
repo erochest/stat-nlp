@@ -24,10 +24,10 @@ import           StatNLP.Types
 import           StatNLP.Utils
 
 
-initCorpus :: Corpus
+initCorpus :: Corpus p
 initCorpus = Corpus M.empty M.empty $ Index M.empty
 
-addDocument :: Corpus -> Document -> (Corpus, Document)
+addDocument :: Corpus p -> Document p -> (Corpus p, Document p)
 addDocument Corpus{..} d = (c, d { documentTokens = tokens })
     where
         (cache, tokens) = cacheTokens corpusTokenCache $ documentTokens d
@@ -36,11 +36,11 @@ addDocument Corpus{..} d = (c, d { documentTokens = tokens })
                    cache
                    $ index <> corpusIndex
 
-addDocument' :: Corpus -> Document -> Corpus
+addDocument' :: Corpus p -> Document p -> Corpus p
 addDocument' c d = fst $ addDocument c d
 
-loadCorpusDirectory :: (FilePath -> IO T.Text) -> Tokenizer (Token SpanPos) -> FilePath
-                    -> IO Corpus
+loadCorpusDirectory :: (FilePath -> IO T.Text) -> Tokenizer (Token p) -> FilePath
+                    -> IO (Corpus p)
 loadCorpusDirectory reader tokenizer root =
         fmap (foldl' addDocument' initCorpus)
     .   mapM (loadDocument reader tokenizer)

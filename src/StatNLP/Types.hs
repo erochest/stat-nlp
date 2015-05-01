@@ -12,6 +12,7 @@ module StatNLP.Types
     , PlainToken
     , DocumentPos
     , SpanPos(..)
+    , LinePos(..)
     , PlainTokenizer
     , Tokenizer
     , FreqMap
@@ -51,18 +52,17 @@ instance (Hashable a, Eq a) => Monoid (Index a p) where
     mempty = Index mempty
     mappend (Index a) (Index b) = Index $ M.unionWith mappend a b
 
-data Corpus = Corpus
-            { corpusDocuments  :: !(M.HashMap DocumentId Document)
-            , corpusTokenCache :: !(Cache PlainToken)
-            , corpusIndex      :: !(Index PlainToken DocumentPos)
-            }
-
-data Document = Document
-              { documentId     :: !DocumentId
-              , documentTags   :: !(S.HashSet Tag)
-              , documentText   :: !T.Text
-              , documentTokens :: !(V.Vector (Token SpanPos))
+data Corpus p = Corpus
+              { corpusDocuments  :: !(M.HashMap DocumentId (Document p))
+              , corpusTokenCache :: !(Cache PlainToken)
+              , corpusIndex      :: !(Index PlainToken (DocumentPos p))
               }
+
+data Document p = Document
+                { documentId     :: !DocumentId
+                , documentTags   :: !(S.HashSet Tag)
+                , documentTokens :: !(V.Vector (Token p))
+                }
 
 data Token p = Token
              { tokenNorm :: !PlainToken
@@ -72,12 +72,17 @@ data Token p = Token
 
 instance Hashable p => Hashable (Token p)
 
-type DocumentPos = (DocumentId, SpanPos)
+type DocumentPos p = (DocumentId, p)
 
 data SpanPos = Span { spanStart :: !Int, spanEnd :: !Int }
              deriving (Show, Eq, Generic)
 
 instance Hashable SpanPos
+
+data LinePos = Line { posLine :: !Int, posCol :: !Int }
+             deriving (Show, Eq, Generic)
+
+instance Hashable LinePos
 
 type instance Element (Token p) = T.Text
 

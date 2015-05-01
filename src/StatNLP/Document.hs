@@ -13,11 +13,10 @@ import           StatNLP.Text.Tokens
 import           StatNLP.Types
 
 
-loadDocument :: (FilePath -> IO T.Text) -> Tokenizer (Token SpanPos) -> FilePath
-             -> IO Document
-loadDocument reader tokenizer input = do
-    text <- reader input
-    return . Document dId S.empty text . V.fromList $! tokenizer text
+loadDocument :: (FilePath -> IO T.Text) -> Tokenizer (Token p) -> FilePath
+             -> IO (Document p)
+loadDocument reader tokenizer input =
+    Document dId S.empty . V.fromList . tokenizer <$> reader input
     where
         dId = case toText input of
                   Left a  -> a
