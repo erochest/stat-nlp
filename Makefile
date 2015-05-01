@@ -2,7 +2,7 @@
 SRC=$(shell find src -name '*.hs')
 
 CABAL=cabal
-FLAGS=--enable-tests
+FLAGS=--enable-tests --enable-library-profiling --enable-executable-profiling
 
 all: init test docs package
 
@@ -18,7 +18,7 @@ specs: build
 	./dist/build/stat-nlp-specs/stat-nlp-specs
 
 run:
-	${CABAL} run < corpora/gutenberg/carroll-alice.txt
+	${CABAL} run corpora/gutenberg/
 
 
 # docs:
@@ -54,6 +54,9 @@ configure: clean
 deps: clean
 	${CABAL} install --only-dependencies --allow-newer ${FLAGS}
 	make configure
+
+stat-nlp.ps: stat-nlp.hp
+	hs2ps -e8in -c $<
 
 build:
 	${CABAL} build
