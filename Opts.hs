@@ -7,13 +7,19 @@ import           Options.Applicative
 import           Prelude                   hiding (FilePath)
 
 
-parseArgs :: IO FilePath
+type Args = (FilePath, Maybe T.Text)
+
+parseArgs :: IO Args
 parseArgs = execParser opts
 
-opts' :: Parser FilePath
-opts' = argument fileOpt (  metavar "CORPUS_DIR"
-                         <> help "The root directory for the corpus files.")
+opts' :: Parser Args
+opts' =   (,)
+      <$> argument fileOpt (  metavar "CORPUS_DIR"
+                           <> help "The root directory for the corpus files.")
+      <*> optional (argument textOpt (  metavar "SEARCH_TERM"
+                                     <> help "A term to search for."))
 
+opts :: ParserInfo Args
 opts = info (helper <*> opts')
             (  fullDesc
             <> progDesc "Program for working through Foundations of Statistical NLP."
@@ -21,3 +27,6 @@ opts = info (helper <*> opts')
 
 fileOpt :: ReadM FilePath
 fileOpt = decodeString <$> str
+
+textOpt :: ReadM T.Text
+textOpt = T.pack <$> str

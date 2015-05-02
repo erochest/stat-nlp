@@ -34,11 +34,10 @@ tokenize :: Tokenizer (Token LinePos)
 tokenize = lineTokenizer (regex [UnicodeWord] "[\\p{L}\\p{M}]+") 0
 
 matchToken :: Match -> Maybe (Token SpanPos)
-matchToken g = Token <$> text
-                     <*> pure Nothing
-                     <*> (Span <$> fmap T.length (prefix 0 g)
-                               <*> fmap T.length text)
-    where text = group 0 g
+matchToken g = do
+    text  <- group 0 g
+    start <- T.length <$> prefix 0 g
+    return . Token text Nothing . Span start $ start + T.length text
 
 normalize :: Token p -> Token p
 normalize = omap T.toLower

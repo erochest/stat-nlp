@@ -9,6 +9,7 @@ import           Data.Hashable
 import qualified Data.HashMap.Strict as M
 import           Data.Foldable
 
+import           StatNLP.Corpus
 import           StatNLP.Types
 
 
@@ -27,3 +28,8 @@ indexDocumentTokens :: (Functor f, Foldable f)
                     => DocumentId -> f (Token p)
                     -> Index PlainToken (DocumentPos p)
 indexDocumentTokens dId ts = (dId,) <$> indexTokens ts
+
+readIndexDocument :: Corpus p -> Document
+                  -> IO (Index PlainToken (DocumentPos p))
+readIndexDocument c d =
+    indexDocumentTokens (documentId d) <$> documentTokens c d

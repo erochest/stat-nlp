@@ -7,10 +7,13 @@ module Main where
 import           Control.DeepSeq
 import           Control.Monad.Identity
 import           Data.Bifunctor
+import           Data.Foldable
 import           Data.Hashable
 import qualified Data.HashMap.Strict       as M
 import qualified Data.HashSet              as S
+import qualified Data.List                 as L
 import           Data.Monoid
+import           Data.Ord
 import qualified Data.Text                 as T
 import           Data.Text.Encoding        (decodeLatin1)
 import qualified Data.Text.Format          as F
@@ -25,7 +28,9 @@ import           Taygeta.Tokenizer         (regexTokenizer)
 
 import           StatNLP.Corpus
 import           StatNLP.Output
+import           StatNLP.Output.Kwic
 import           StatNLP.Text.Collocates
+import           StatNLP.Text.Index
 import           StatNLP.Text.Tokens
 import           StatNLP.Text.Utils
 import           StatNLP.Types
@@ -40,44 +45,31 @@ import           Opts
 -}
 
 
+
 main :: IO ()
 main = do
-    corpusPath <- parseArgs
+    (corpusPath, mtarget) <- parseArgs
 
     -- stopwords
-    stopwords <-  S.fromList . map (T.toLower . tokenNorm) . tokenize
+    stopwords <-  S.fromList . map (tokenNorm . normalize) . tokenize
               <$> TIO.readFile "corpora/stopwords/english"
 
-    let reader    = fmap (T.lines . decodeLatin1) . readFile . documentId
+    let reader    = fmap decodeLatin1 . readFile . documentId
         tokenizer = filter (not . (`S.member` stopwords) . tokenNorm)
                   . fmap normalize
                   . tokenize
 
     corpus <- loadCorpusDirectory tokenizer reader corpusPath
-    let docs = M.elems $ corpusDocuments corpus
-    tokens <- time $ do
-        putStrLn "Tokenizing"
-        map tokenNorm . concat <$> mapM (documentTokens corpus) docs
+    let docs = L.sortBy (comparing documentId) . M.elems $ corpusDocuments corpus
+    index <- fold <$> mapM (readIndexDocument corpus) docs
+    let targets = case mtarget of
+                      Just t  -> [t]
+                      Nothing -> L.sort . M.keys $ unIndex index
 
-    -- frequencies
-    putStrLn "Frequencies"
-    time $ do
-        let freqs = frequencies tokens
-        freqReport 25 freqs
-        F.print "Token/type ratio = {}\n\n" . F.Only $ tokenTypeRatio freqs
+    mapM_ (TIO.putStrLn <=< formatKwic corpus index) targets
 
-    -- collocates
-    time $ do
-        putStrLn "Collocates"
-        freqShowReport 25 $ collocates 3 3 tokens
+    putStrLn "done!"
 
-    -- n-grams
-    time $ do
-        putStrLn "\nBigrams"
-        freqShowReport 25 $ ngrams 2 tokens
-    time $ do
-        putStrLn "\nTrigrams"
-        freqShowReport 25 $ ngrams 3 tokens
 
 freqShowReport :: (Traversable t, Show a) => Int -> t a -> IO ()
 freqShowReport n = freqReport n . frequencies . fmap show

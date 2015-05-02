@@ -21,7 +21,6 @@ import           Filesystem.Path.CurrentOS
 import           Prelude                   hiding (FilePath)
 
 import           StatNLP.Document
-import           StatNLP.Text.Index
 import           StatNLP.Text.Tokens
 import           StatNLP.Types
 import           StatNLP.Utils
@@ -53,5 +52,4 @@ loadCorpusDirectory tokenizer reader root =
             if isDir then walkDirectory filename else return [filename]
 
 documentTokens :: Corpus p -> Document -> IO [Token p]
-documentTokens Corpus{..} d = do
-    concatMap corpusTokenizer <$> corpusReader d
+documentTokens Corpus{..} d = corpusTokenizer <$> corpusReader d

@@ -46,7 +46,7 @@ type FreqMap a      = M.HashMap a Int
 type DocumentId     = FilePath
 type Tag            = T.Text
 type Cache a        = M.HashMap a a
-type DocumentReader = Document -> IO [T.Text]
+type DocumentReader = Document -> IO T.Text
 
 newtype Index a p = Index { unIndex :: M.HashMap a [p] }
 
@@ -90,7 +90,7 @@ instance Hashable SpanPos
 instance NFData SpanPos
 
 data LinePos = Line { posLine :: !Int, posStart :: !Int, posEnd :: !Int }
-             deriving (Show, Eq, Generic)
+             deriving (Show, Eq, Ord, Generic)
 
 instance Hashable LinePos
 

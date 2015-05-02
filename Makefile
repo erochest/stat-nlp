@@ -18,7 +18,7 @@ specs: build
 	./dist/build/stat-nlp-specs/stat-nlp-specs
 
 run:
-	${CABAL} run corpora/gutenberg/
+	${CABAL} run corpora/gutenberg/melville-moby_dick.txt shown
 
 
 # docs:
