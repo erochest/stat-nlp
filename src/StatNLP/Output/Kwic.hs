@@ -58,7 +58,7 @@ kwicGroup c xs@((docId, _):_) = do
 kwicGroup _ _ = return mempty
 
 -- TODO: Need to wrap around the previous lines while normalizing
--- whitespace.
+-- whitespace. Make sure that the hit is in the center.
 kwicLine :: T.Text -> (Int, T.Text, [LinePos]) -> Builder
 kwicLine doc (lineNo, line, ps) = foldMap (sliceLine doc lineNo line) ps
 
