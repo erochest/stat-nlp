@@ -37,7 +37,9 @@ library
                      , containers
                      , deepseq
                      , hashable
+                     , linear
                      , mono-traversable
+                     , statistics
                      , system-fileio
                      , system-filepath
                      , taygeta
@@ -46,6 +48,7 @@ library
                      , text-icu
                      , unordered-containers
                      , vector
+                     , vector-algorithms
   hs-source-dirs:      src
   default-language:    Haskell2010
 

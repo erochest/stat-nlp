@@ -41,8 +41,8 @@ import           Opts
 {-
  - **TODO**: Research Wittgenstein's *use theory of meaning*.
  -
- - TODO: concordance/kwic generator
--}
+ - TODO: probability distributions
+ -}
 
 
 
