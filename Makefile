@@ -44,6 +44,7 @@ hlint:
 
 clean:
 	${CABAL} clean
+	-rm -rf *.hp *.prof *.ps *.aux
 
 distclean: clean
 	${CABAL} sandbox delete
