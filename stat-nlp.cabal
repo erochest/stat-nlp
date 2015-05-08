@@ -36,6 +36,7 @@ library
                      , conduit-extra
                      , containers
                      , deepseq
+                     , fingertree
                      , hashable
                      , linear
                      , mono-traversable
@@ -94,6 +95,7 @@ test-suite stat-nlp-specs
                        , conduit-combinators
                        , conduit-extra
                        , containers
+                       , fingertree
                        , hashable
                        , hspec
                        , mtl

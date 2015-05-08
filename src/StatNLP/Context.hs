@@ -1,3 +1,7 @@
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ViewPatterns          #-}
+
 
 module StatNLP.Context
     ( pushL
@@ -6,11 +10,18 @@ module StatNLP.Context
     , shiftR
     , trimL
     , trimR
+
+    , pushContext
+    , appendContext
+    , getContext
     ) where
 
 
-import           Data.Sequence (Seq, ViewL (..), ViewR (..), (<|), (|>))
-import qualified Data.Sequence as Seq
+import qualified Data.FingerTree  as FT
+import           Data.Foldable
+import           Data.Monoid
+import qualified Data.Sequence    as Seq
+import           Data.Traversable
 
 import           StatNLP.Types
 
@@ -18,39 +29,62 @@ import           StatNLP.Types
 pushL :: Context a -> a -> Context a
 pushL (Context b a ls c rs) x =
     case Seq.viewl rs of
-        EmptyL   -> Context b a ls' x rs
-        r :< rs' -> Context b a ls' r $ rs' |> x
+        Seq.EmptyL   -> Context b a ls' x rs
+        r Seq.:< rs' -> Context b a ls' r $ rs' Seq.|> x
     where
-        ls' = (ls |> c) `trimL` b
+        ls' = (ls Seq.|> c) `trimL` b
 
 pushR :: a -> Context a -> Context a
 pushR x (Context b a ls c rs) =
     case Seq.viewr ls of
-        EmptyR   -> Context b a ls x rs'
-        ls' :> l -> Context b a (x <| ls') l rs'
+        Seq.EmptyR   -> Context b a ls x rs'
+        ls' Seq.:> l -> Context b a (x Seq.<| ls') l rs'
     where
-        rs' = (c <| rs) `trimR` a
+        rs' = (c Seq.<| rs) `trimR` a
 
-trimL :: Seq a -> Int -> Seq a
+trimL :: Seq.Seq a -> Int -> Seq.Seq a
 trimL ss n | Seq.length ss > n = case Seq.viewl ss of
-                                     EmptyL   -> ss
-                                     _ :< ss' -> trimL ss' n
+                                     Seq.EmptyL   -> ss
+                                     _ Seq.:< ss' -> trimL ss' n
            | otherwise         = ss
 
-trimR :: Seq a -> Int -> Seq a
+trimR :: Seq.Seq a -> Int -> Seq.Seq a
 trimR ss n | Seq.length ss > n = case Seq.viewr ss of
-                                     EmptyR   -> ss
-                                     ss' :> _ -> trimR ss' n
+                                     Seq.EmptyR   -> ss
+                                     ss' Seq.:> _ -> trimR ss' n
            | otherwise         = ss
 
 shiftL, shiftR :: Context a -> Maybe (Context a)
 shiftL (Context a b ls c rs) =
     case Seq.viewr rs of
-        EmptyR   -> Nothing
-        rs' :> r -> Just $ Context a b (ls |> c) r rs'
+        Seq.EmptyR   -> Nothing
+        rs' Seq.:> r -> Just $ Context a b (ls Seq.|> c) r rs'
 
 shiftR (Context a b ls c rs) =
     case Seq.viewl ls of
-        EmptyL   -> Nothing
-        l :< ls' -> Just $ Context a b ls' l (c <| rs)
+        Seq.EmptyL   -> Nothing
+        l Seq.:< ls' -> Just $ Context a b ls' l (c Seq.<| rs)
 
+pushContext :: FT.Measured (Sum Int) a => MeasuredContext a -> a -> MeasuredContext a
+pushContext (MContext size ftree) a = MContext size
+                                    . uncurry shiftLeft
+                                    . FT.split (>size)
+                                    $ CItem a FT.<| ftree
+
+getContext :: FT.Measured (Sum Int) a => MeasuredContext a -> [a]
+getContext = fmap getContextItem . toList . FT.reverse . mContextSeq
+
+appendContext :: (FT.Measured (Sum Int) a, Foldable t, Traversable t)
+              => MeasuredContext a -> t a -> MeasuredContext a
+appendContext (MContext size ftree) = MContext size
+                                    . uncurry shiftLeft
+                                    . FT.split (>size)
+                                    . (<> ftree)
+                                    . FT.fromList
+                                    . reverse
+                                    . toList
+                                    . fmap CItem
+
+shiftLeft :: FT.Measured v a => FT.FingerTree v a -> FT.FingerTree v a -> FT.FingerTree v a
+shiftLeft ft1 (FT.viewl -> x FT.:< _) = ft1 FT.|> x
+shiftLeft ft  _                       = ft

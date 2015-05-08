@@ -1,6 +1,9 @@
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE TypeFamilies  #-}
+{-# LANGUAGE DeriveFunctor         #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 
 module StatNLP.Types
@@ -21,22 +24,28 @@ module StatNLP.Types
     , DocumentReader
 
     , Context(..)
+    , MeasuredContext(..)
+    , ContextItem(..)
     ) where
 
 
 import           Control.DeepSeq
+import qualified Data.FingerTree           as FT
 import           Data.Foldable
 import           Data.Hashable
 import qualified Data.HashMap.Strict       as M
 import qualified Data.HashSet              as S
+import           Data.Monoid
 import           Data.MonoTraversable
 import           Data.Sequence             (Seq)
+import           Data.String
 import qualified Data.Text                 as T
 import qualified Data.Vector               as V
 import           Filesystem.Path.CurrentOS
 import           GHC.Generics
 import           Prelude                   hiding (FilePath)
-import           Taygeta.Types             (PlainToken, PlainTokenizer, Tokenizer)
+import           Taygeta.Types             (PlainToken, PlainTokenizer,
+                                            Tokenizer)
 
 
 -- TODO: Kwic as line context
@@ -58,14 +67,14 @@ instance (Hashable a, Eq a) => Monoid (Index a p) where
     mappend (Index a) (Index b) = Index $ M.unionWith mappend a b
 
 data Corpus p = Corpus
-              { corpusDocuments  :: !(M.HashMap T.Text Document)
-              , corpusTokenizer  :: !(Tokenizer (Token p))
-              , corpusReader     :: !DocumentReader
+              { corpusDocuments :: !(M.HashMap T.Text Document)
+              , corpusTokenizer :: !(Tokenizer (Token p))
+              , corpusReader    :: !DocumentReader
               }
 
 data Document = Document
-              { documentId     :: !DocumentId
-              , documentTags   :: !(S.HashSet Tag)
+              { documentId   :: !DocumentId
+              , documentTags :: !(S.HashSet Tag)
               } deriving (Generic)
 
 instance NFData Document
@@ -79,6 +88,9 @@ data Token p = Token
 instance Hashable p => Hashable (Token p)
 
 instance NFData p => NFData (Token p)
+
+instance IsString (Token SpanPos) where
+    fromString norm = Token (T.pack norm) Nothing . Span 0 $ length norm
 
 type DocumentPos p = (DocumentId, p)
 
@@ -112,3 +124,26 @@ data Context a = Context
 instance Functor Context where
     fmap f (Context b a before current after) =
         Context b a (fmap f before) (f current) (fmap f after)
+
+data MeasuredContext a = MContext
+                       { mContextSize :: !(Sum Int)
+                       , mContextSeq  :: !(FT.FingerTree (Sum Int) (ContextItem a))
+                       } deriving (Show, Eq)
+
+newtype ContextItem a = CItem { getContextItem :: a }
+                        deriving (Show, Eq)
+
+instance IsString a => IsString (ContextItem a) where
+    fromString = CItem . fromString
+
+instance FT.Measured (Sum Int) SpanPos where
+    measure (Span start end) = Sum $ end - start
+
+instance FT.Measured (Sum Int) LinePos where
+    measure (Line _ start end) = Sum $ end - start
+
+instance FT.Measured (Sum Int) p => FT.Measured (Sum Int) (Token p) where
+    measure = FT.measure . tokenPos
+
+instance FT.Measured (Sum Int) a => FT.Measured (Sum Int) (ContextItem a) where
+    measure = (+ Sum 1) . FT.measure . getContextItem
