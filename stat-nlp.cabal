@@ -80,7 +80,6 @@ executable stat-nlp
   ghc-options:         -O2
                        -threaded
                        -fprof-auto
-                       "-with-rtsopts=-N -p -s -h -i0.1"
 
 test-suite stat-nlp-specs
   type:                exitcode-stdio-1.0
