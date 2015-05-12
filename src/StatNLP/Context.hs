@@ -11,9 +11,11 @@ module StatNLP.Context
     , trimL
     , trimR
 
-    , pushContext
-    , appendContext
+    , pushLeft
+    , appendLeft
     , getContext
+    , emptyContext
+    , contextSize
     ) where
 
 
@@ -65,26 +67,32 @@ shiftR (Context a b ls c rs) =
         Seq.EmptyL   -> Nothing
         l Seq.:< ls' -> Just $ Context a b ls' l (c Seq.<| rs)
 
-pushContext :: FT.Measured (Sum Int) a => MeasuredContext a -> a -> MeasuredContext a
-pushContext (MContext size ftree) a = MContext size
-                                    . uncurry shiftLeft
-                                    . FT.split (>size)
-                                    $ CItem a FT.<| ftree
+pushLeft :: FT.Measured (Sum Int) a => a -> MeasuredContext a -> MeasuredContext a
+pushLeft a (MContext size ftree) = MContext size
+                                 . uncurry shiftLeft
+                                 . FT.split (>size)
+                                 $ CItem a FT.<| ftree
 
 getContext :: FT.Measured (Sum Int) a => MeasuredContext a -> [a]
 getContext = fmap getContextItem . toList . FT.reverse . mContextSeq
 
-appendContext :: (FT.Measured (Sum Int) a, Foldable t, Traversable t)
-              => MeasuredContext a -> t a -> MeasuredContext a
-appendContext (MContext size ftree) = MContext size
-                                    . uncurry shiftLeft
-                                    . FT.split (>size)
-                                    . (<> ftree)
-                                    . FT.fromList
-                                    . reverse
-                                    . toList
-                                    . fmap CItem
+appendLeft :: (FT.Measured (Sum Int) a, Foldable t, Traversable t)
+           => MeasuredContext a -> t a -> MeasuredContext a
+appendLeft (MContext size ftree) = MContext size
+                                 . uncurry shiftLeft
+                                 . FT.split (>size)
+                                 . (<> ftree)
+                                 . FT.fromList
+                                 . reverse
+                                 . toList
+                                 . fmap CItem
 
 shiftLeft :: FT.Measured v a => FT.FingerTree v a -> FT.FingerTree v a -> FT.FingerTree v a
-shiftLeft ft1 (FT.viewl -> x FT.:< _) = ft1 FT.|> x
-shiftLeft ft  _                       = ft
+shiftLeft ft (FT.viewl -> x FT.:< _) = ft FT.|> x
+shiftLeft ft _                       = ft
+
+emptyContext :: FT.Measured (Sum Int) a => Int -> MeasuredContext a
+emptyContext size = MContext (Sum size) FT.empty
+
+contextSize :: FT.Measured (Sum Int) a => MeasuredContext a -> Int
+contextSize = getSum . FT.measure . mContextSeq

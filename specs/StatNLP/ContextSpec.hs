@@ -76,42 +76,42 @@ spec = do
                 shiftR (Context 2 2 [1] 2 [3, 4]) `shouldSatisfy` isJust
 
     describe "MeasuredContext" $ do
-        let goodbye = appendContext (MContext 10 FT.empty) ([ "good-bye"
-                                                            , "cruel"
-                                                            , "world"
-                                                            ] :: [Token SpanPos])
-            today   = appendContext (MContext 10 FT.empty) ([ "today"
-                                                            , "is"
-                                                            , "the"
-                                                            , "first"
-                                                            , "day"
-                                                            , "of"
-                                                            , "the"
-                                                            , ","
-                                                            , "rest"
-                                                            , "of"
-                                                            , "my"
-                                                            , "life"
-                                                            , "."
-                                                            ] :: [ContextItem (Token SpanPos)])
+        let goodbye = appendLeft (MContext 10 FT.empty) ([ "good-bye"
+                                                         , "cruel"
+                                                         , "world"
+                                                         ] :: [Token SpanPos])
+            today   = appendLeft (MContext 10 FT.empty) ([ "today"
+                                                         , "is"
+                                                         , "the"
+                                                         , "first"
+                                                         , "day"
+                                                         , "of"
+                                                         , "the"
+                                                         , ","
+                                                         , "rest"
+                                                         , "of"
+                                                         , "my"
+                                                         , "life"
+                                                         , "."
+                                                         ] :: [Token SpanPos])
 
-        describe "pushContext" $ do
+        describe "pushLeft" $ do
             it "should allow one to push context into it." $
-                getContext (pushContext (MContext 10 FT.empty) ("howdy" :: Token SpanPos))
+                getContext (pushLeft ("howdy" :: Token SpanPos) (MContext 10 FT.empty))
                     `shouldBe` ["howdy"]
             it "should limit the amount of data in the context." $
                 getContext goodbye `shouldBe` ["cruel", "world"]
             it "should allow one item of data over the limit." $
                 FT.measure (mContextSeq goodbye) `shouldBe` Sum 12
 
-        describe "appendContext" $ do
+        describe "appendLeft" $ do
             it "should push multiple items into the context." $
-                let c = appendContext (MContext 100 FT.empty)
+                let c = appendLeft (MContext 100 FT.empty)
                                       (["one", "two", "three"] :: [Token SpanPos])
                 in  getContext c `shouldBe` ["one", "two", "three"]
             it "should push lots of things into the list." $
-                getContext today `shouldBe` ["my", "life", "."]
+                getContext today `shouldBe` ["of", "my", "life", "."]
 
         describe "getContext" $ do
             it "should return the context as a list." $
-                getContext today `shouldBe` ["my", "life", "."]
+                getContext today `shouldBe` ["of", "my", "life", "."]
