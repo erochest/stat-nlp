@@ -69,9 +69,9 @@ shiftR (Context a b ls c rs) =
 
 pushLeft :: FT.Measured (Sum Int) a => a -> MeasuredContext a -> MeasuredContext a
 pushLeft a (MContext size ftree) = MContext size
+                                 . (CItem a FT.<|)
                                  . uncurry shiftLeft
-                                 . FT.split (>size)
-                                 $ CItem a FT.<| ftree
+                                 $ FT.split (>size) ftree
 
 getContext :: FT.Measured (Sum Int) a => MeasuredContext a -> [a]
 getContext = fmap getContextItem . toList . FT.reverse . mContextSeq

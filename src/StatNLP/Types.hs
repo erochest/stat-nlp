@@ -145,6 +145,9 @@ instance FT.Measured (Sum Int) LinePos where
 instance FT.Measured (Sum Int) p => FT.Measured (Sum Int) (Token p) where
     measure = FT.measure . tokenPos
 
+instance FT.Measured (Sum Int) a => FT.Measured (Sum Int) (x, a) where
+    measure = FT.measure . snd
+
 instance FT.Measured (Sum Int) a => FT.Measured (Sum Int) (ContextItem a) where
     measure = (+ Sum 1) . FT.measure . getContextItem
 

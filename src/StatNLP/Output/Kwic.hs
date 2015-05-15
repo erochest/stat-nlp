@@ -8,12 +8,15 @@ module StatNLP.Output.Kwic
     ( kwic
     , buildKwic
     , syncLines
+    , sliceHits
+    , normWS
     ) where
 
 
 import           Control.Arrow             ((&&&))
 import           Control.Monad
 import           Data.Bifunctor
+import           Data.Char
 import           Data.Either
 import qualified Data.FingerTree           as FT
 import           Data.Foldable
@@ -34,7 +37,7 @@ import           StatNLP.Document
 import           StatNLP.Types
 
 
-type KwicContext = MeasuredContext T.Text
+type KwicContext = MeasuredContext (T.Text, LinePos)
 type KwicPending = (LinePos, T.Text, T.Text, KwicContext)
 type KwicState   = (KwicContext, [KwicPending])
 
@@ -54,7 +57,8 @@ buildKwic context Kwic{..} =
         basename          = encodeString $ filename docId
     in   F.build "{}:{}:{}  {}  **{}**  {}\n"
                  ( F.left 25 ' ' basename, F.left 7 ' ' posLine, F.left 3 ' ' posStart
-                 , F.left context ' ' $ T.take context kwicPrefix, kwicTarget, kwicSuffix
+                 , F.left context ' ' $ T.takeEnd context kwicPrefix
+                 , kwicTarget, T.take context kwicSuffix
                  )
 
 kwicDoc :: Int -> Corpus LinePos -> [DocumentLine] -> IO [Kwic DocumentLine]
@@ -89,18 +93,22 @@ stepLine docId size empty s (lineNo, (line, tokens), hits) =
             where
                 text     = T.take (posEnd tokenPos - posStart tokenPos)
                          $ T.drop (posStart tokenPos) line
-                context' = text `pushLeft` context
-                p        = (tokenPos, contextText context, text, empty)
+                citem    = (line, tokenPos)
+                context' = citem `pushLeft` context
+                start    = tokenPos { posEnd = posStart tokenPos }
+                end      = tokenPos { posStart = posEnd tokenPos
+                                    -- , posEnd   = posEnd tokenPos
+                                    }
+                p        = ( tokenPos
+                           , contextText ((line, start) `pushLeft` context)
+                           , text
+                           , (line, end) `pushLeft` empty
+                           )
                 pending' = if isHit
                                then p:remaining
                                else remaining
-                (current, remaining) = fmap (fmap (overContext (pushLeft text)))
-                                     $ L.partition ( (>size)
-                                                   . getSum
-                                                   . FT.measure
-                                                   . mContextSeq
-                                                   . frth
-                                                   ) pending
+                (current, remaining) =   fmap (overContext (pushLeft citem))
+                                     <$> L.partition ((>size) . contextSize . frth) pending
 
 pendingKwic :: KwicPending -> Kwic LinePos
 pendingKwic (linePos, pref, hit, context) =
@@ -110,7 +118,21 @@ pendingKwic' :: DocumentId -> KwicPending -> Kwic DocumentLine
 pendingKwic' docId = fmap (docId,) . pendingKwic
 
 contextText :: KwicContext -> T.Text
-contextText = T.intercalate " " . getContext
+contextText = normWS . T.intercalate " " . sliceHits . getContext
+
+sliceHits :: [(T.Text, LinePos)] -> [T.Text]
+sliceHits [] = []
+sliceHits ((l, Line n start _):rest) =
+    reverse . map snd $ go n [(start, T.drop start l)] rest
+    where
+        go :: Int -> [(Int, T.Text)] -> [(T.Text, LinePos)] -> [(Int, T.Text)]
+        go lineNo parts [] = parts
+        go lineNo parts@((s, l'):parts') [(l, Line n _ end)]
+            | lineNo == n = (s, T.take (end - s) l'):parts'
+            | otherwise   = (0, T.take end l):parts
+        go lineNo parts ((l, Line n _ _):hits)
+            | lineNo == n = go lineNo parts hits
+            | otherwise   = go n ((0, l):parts) hits
 
 syncLines :: [[LinePos]]           -- ^ A document's hits, grouped and sorted by lines.
           -> [(Int, l)]            -- ^ A document's numbered lines.
@@ -145,3 +167,6 @@ overContext f (a, b, c, d) = (a, b, c, f d)
 
 frth :: (a, b, c, d) -> d
 frth (_, _, _, a) = a
+
+normWS :: T.Text -> T.Text
+normWS = T.intercalate " " . filter (not . T.null) . T.split isSpace
