@@ -18,6 +18,8 @@ import qualified Data.Text                 as T
 import           Data.Text.Encoding        (decodeLatin1)
 import qualified Data.Text.Format          as F
 import qualified Data.Text.IO              as TIO
+import           Data.Text.Lazy            (toStrict)
+import           Data.Text.Lazy.Builder    (toLazyText)
 import           Data.Time
 import           Data.Traversable
 import qualified Data.Vector               as V
@@ -66,7 +68,7 @@ main = do
                       Just t  -> [t]
                       Nothing -> L.sort . M.keys $ unIndex index
 
-    mapM_ (TIO.putStrLn <=< formatKwic corpus index) targets
+    mapM_ (TIO.putStr . toStrict . toLazyText . foldMap buildKwic <=< kwic 40 corpus index) targets
 
     putStrLn "done!"
 

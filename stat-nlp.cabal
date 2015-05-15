@@ -30,6 +30,7 @@ library
   -- other-modules:       
   -- other-extensions:    
   build-depends:       base >=4.8 && <5
+                     , bifunctors
                      , comonad
                      , conduit
                      , conduit-combinators

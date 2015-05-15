@@ -14,6 +14,7 @@ module StatNLP.Types
     , Index(..)
     , PlainToken
     , DocumentPos
+    , DocumentLine
     , SpanPos(..)
     , LinePos(..)
     , PlainTokenizer
@@ -26,6 +27,7 @@ module StatNLP.Types
     , Context(..)
     , MeasuredContext(..)
     , ContextItem(..)
+    , Kwic(..)
     ) where
 
 
@@ -47,9 +49,6 @@ import           Prelude                   hiding (FilePath)
 import           Taygeta.Types             (PlainToken, PlainTokenizer,
                                             Tokenizer)
 
-
--- TODO: Kwic as line context
--- TODO: concordance as Kwic for all types
 
 type FreqMap a      = M.HashMap a Int
 type DocumentId     = FilePath
@@ -93,6 +92,7 @@ instance IsString (Token SpanPos) where
     fromString norm = Token (T.pack norm) Nothing . Span 0 $ length norm
 
 type DocumentPos p = (DocumentId, p)
+type DocumentLine  = DocumentPos LinePos
 
 data SpanPos = Span { spanStart :: !Int, spanEnd :: !Int }
              deriving (Show, Eq, Generic)
@@ -147,3 +147,13 @@ instance FT.Measured (Sum Int) p => FT.Measured (Sum Int) (Token p) where
 
 instance FT.Measured (Sum Int) a => FT.Measured (Sum Int) (ContextItem a) where
     measure = (+ Sum 1) . FT.measure . getContextItem
+
+instance FT.Measured (Sum Int) T.Text where
+    measure = Sum . T.length
+
+data Kwic p = Kwic
+            { kwicPos    :: !p
+            , kwicPrefix :: !T.Text
+            , kwicTarget :: !T.Text
+            , kwicSuffix :: !T.Text
+            } deriving (Show, Eq, Functor)
