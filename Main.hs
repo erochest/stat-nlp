@@ -68,7 +68,9 @@ main = do
                       Just t  -> [t]
                       Nothing -> L.sort . M.keys $ unIndex index
 
-    mapM_ (TIO.putStr . toStrict . toLazyText . foldMap buildKwic <=< kwic 40 corpus index) targets
+    mapM_ (   TIO.putStr . toStrict . toLazyText . foldMap (buildKwic 40)
+          <=< kwic 40 corpus index
+          )   targets
 
     putStrLn "done!"
 

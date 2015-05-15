@@ -48,13 +48,13 @@ kwic context corpus index token =
     where
         hits = M.lookupDefault [] token $ unIndex index
 
-buildKwic :: Kwic DocumentLine -> Builder
-buildKwic Kwic{..} =
+buildKwic :: Int -> Kwic DocumentLine -> Builder
+buildKwic context Kwic{..} =
     let (docId, Line{..}) = kwicPos
         basename          = encodeString $ filename docId
-    in   F.build "{}:{}:{}\t{}\t{}\t{}\n"
-                 ( basename, posLine, posStart
-                 , kwicPrefix, kwicTarget, kwicSuffix
+    in   F.build "{}:{}:{}  {}  **{}**  {}\n"
+                 ( F.left 25 ' ' basename, F.left 7 ' ' posLine, F.left 3 ' ' posStart
+                 , F.left context ' ' $ T.take context kwicPrefix, kwicTarget, kwicSuffix
                  )
 
 kwicDoc :: Int -> Corpus LinePos -> [DocumentLine] -> IO [Kwic DocumentLine]
