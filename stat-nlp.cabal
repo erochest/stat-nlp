@@ -21,6 +21,7 @@ library
                      , StatNLP.Corpus
                      , StatNLP.Document
                      , StatNLP.Output.Kwic
+                     , StatNLP.Statistics
                      , StatNLP.Text.Collocates
                      , StatNLP.Text.Index
                      , StatNLP.Text.Tokens
