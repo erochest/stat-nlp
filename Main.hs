@@ -64,16 +64,16 @@ main = do
     corpus <- loadCorpusDirectory tokenizer reader corpusPath
     let docs = L.sortBy (comparing documentId) . M.elems $ corpusDocuments corpus
 
-    colls <-  fold
+    colls <-  M.toList . unHash . fold
           <$> mapM ( fmap (frequencies . collocates 0 2 . fmap tokenNorm)
                    . documentTokens corpus) docs
+    let filterf a ((b, _), _) = a == b
+        hits = maybe colls ((`filter` colls) . filterf) mtarget
     mapM_ (F.print "{} {}\t{}\n")
         . fmap (\((a, b), c) -> (a, b, c))
         . take 25
         . L.sortBy (comparing (Down . snd))
-        . fmap (fmap getSum)
-        . M.toList
-        $ unHash colls
+        $ fmap (fmap getSum) hits
 
     putStrLn "done!"
 
