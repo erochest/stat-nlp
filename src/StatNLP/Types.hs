@@ -12,6 +12,7 @@ module StatNLP.Types
     , DocumentId
     , Document(..)
     , Index(..)
+    , MonoidHash(..)
     , PlainToken
     , DocumentPos
     , DocumentLine
@@ -64,6 +65,15 @@ instance Functor (Index a) where
 instance (Hashable a, Eq a) => Monoid (Index a p) where
     mempty = Index mempty
     mappend (Index a) (Index b) = Index $ M.unionWith mappend a b
+
+newtype MonoidHash a p = MHash { unHash  :: M.HashMap a p }
+
+instance Functor (MonoidHash a) where
+    fmap f (MHash m) = MHash $ fmap f m
+
+instance (Hashable k, Eq k, Monoid v) => Monoid (MonoidHash k v) where
+    mempty = MHash mempty
+    mappend (MHash a) (MHash b) = MHash $ M.unionWith mappend a b
 
 data Corpus p = Corpus
               { corpusDocuments :: !(M.HashMap T.Text Document)
