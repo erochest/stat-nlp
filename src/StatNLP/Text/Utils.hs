@@ -7,20 +7,21 @@ import           Data.Foldable
 import           Data.Hashable
 import qualified Data.HashMap.Strict as M
 import qualified Data.List           as L
+import           Data.Monoid
 import           Data.Traversable
 
 import           StatNLP.Types
 
 
 count :: (Eq a, Hashable a) => FreqMap a -> a -> FreqMap a
-count m a = M.insertWith (+) a 1 m
+count m a = MHash . M.insertWith mappend a 1 $ unHash m
 
 frequencies :: (Eq a, Hashable a, Foldable f) => f a -> FreqMap a
-frequencies = foldl' count M.empty
+frequencies = foldl' count mempty
 
 tokenTypeRatio :: FreqMap a -> Double
-tokenTypeRatio fm = fromIntegral (sum (M.elems fm))
-                  / fromIntegral (M.size fm)
+tokenTypeRatio (MHash fm) = fromIntegral (getSum . sum $ M.elems fm)
+                          / fromIntegral (M.size fm)
 
 ngrams :: Int -> [a] -> [[a]]
 ngrams n = filter ((== n) . length) . map (take n) . L.tails

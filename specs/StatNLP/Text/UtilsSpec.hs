@@ -10,11 +10,13 @@ import           Control.Monad.Identity
 import           Data.Hashable
 import qualified Data.HashMap.Strict    as M
 import qualified Data.List              as L
+import           Data.Monoid
 
 import           Test.Hspec
 import           Test.QuickCheck
 
 import           StatNLP.Text.Utils
+import           StatNLP.Types
 
 
 instance (Eq k, Hashable k, Arbitrary k, Arbitrary v) => Arbitrary (M.HashMap k v) where
@@ -26,13 +28,13 @@ spec :: Spec
 spec = do
     describe "count" $ do
         it "should expand when a new item is added to it." $
-            M.size (count M.empty (42 :: Int)) `shouldBe` 1
+            (M.size . unHash $ count mempty (42 :: Int)) `shouldBe` 1
         it "should maintain its size when an existing item is re-added to it." $
-            M.size (count [(42, 1)] (42 :: Int)) `shouldBe` 1
+            (M.size . unHash . count (MHash [(42 :: Int, 1)]) $ 42 :: Int) `shouldBe` 1
 
     describe "frequencies" $
         it "should have the sum of its values equal to the length of its center." $
-            property $ \(xs :: [Int]) -> sum (M.elems (frequencies xs)) == length xs
+            property $ \(xs :: [Int]) -> (getSum . sum . M.elems . unHash $ frequencies xs) == length xs
 
     describe "ngrams" $ do
         it "should return sublists of equal length." $

@@ -51,7 +51,7 @@ import           Taygeta.Types             (PlainToken, PlainTokenizer,
                                             Tokenizer)
 
 
-type FreqMap a      = M.HashMap a Int
+type FreqMap a      = MonoidHash a (Sum Int)
 type DocumentId     = FilePath
 type Tag            = T.Text
 type Cache a        = M.HashMap a a
