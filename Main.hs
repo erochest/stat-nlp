@@ -63,14 +63,11 @@ main = do
 
     corpus <- loadCorpusDirectory tokenizer reader corpusPath
     let docs = L.sortBy (comparing documentId) . M.elems $ corpusDocuments corpus
-    index <- fold <$> mapM (readIndexDocument corpus) docs
-    let targets = case mtarget of
-                      Just t  -> [t]
-                      Nothing -> L.sort . M.keys $ unIndex index
 
-    mapM_ (   TIO.putStr . toStrict . toLazyText . foldMap (buildKwic 40)
-          <=< kwic 40 corpus index
-          )   targets
+    colls <-  fold
+          <$> mapM ( fmap (frequencies . collocates 0 2 . fmap tokenNorm)
+                   . documentTokens corpus) docs
+    mapM_ print . L.sortBy (comparing snd) . M.toList $ unHash colls
 
     putStrLn "done!"
 

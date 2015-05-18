@@ -22,7 +22,7 @@ specs: build
 	./dist/build/stat-nlp-specs/stat-nlp-specs
 
 run:
-	${CABAL} run corpora/gutenberg/melville-moby_dick.txt shown $(RUN_FLAGS)
+	${CABAL} run corpora/gutenberg/melville-moby_dick.txt $(RUN_FLAGS)
 
 
 # docs:
