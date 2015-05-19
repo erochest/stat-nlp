@@ -20,17 +20,21 @@ inverseIndex key pos = InverseIndex . toMapWith (++) . fmap (key &&& (pure . pos
         toMapWith f = foldl' (insert f) M.empty
         insert f m (k, v) = M.insertWith f k v m
 
-indexTokens :: (Eq t, Hashable t, Functor f, Foldable f) => f (Token p t) -> InverseIndex t p
+indexTokens :: (Eq t, Hashable t, Functor f, Foldable f)
+            => f (Token p t) -> InverseIndex t p
 indexTokens = inverseIndex tokenNorm tokenPos
 
 indexDocumentTokens :: (Eq t, Hashable t, Functor f, Foldable f)
                     => DocumentId -> f (Token p t) -> InverseIndex t (DocumentPos p)
 indexDocumentTokens dId ts = (dId,) <$> indexTokens ts
 
-readIndexDocument :: Corpus p -> Document
+indexDocument :: (Eq t, Hashable t, Functor f, Foldable f)
+              => Document (f (Token p t)) -> InverseIndex t (DocumentPos p)
+indexDocument (Document did _ dts) = indexDocumentTokens did dts
+
+readIndexDocument :: Corpus p -> Document ()
                   -> IO (InverseIndex PlainToken (DocumentPos p))
-readIndexDocument c d =
-    indexDocumentTokens (documentId d) <$> documentTokens c d
+readIndexDocument c d = indexDocument <$> tokenizeDocument c d
 
 empty :: IxIndex k
 empty = IxIndex M.empty M.empty 0

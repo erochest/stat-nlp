@@ -44,14 +44,6 @@ import           Opts
  - **TODO**: Research Wittgenstein's *use theory of meaning*.
  -
  - TODO: probability distributions
- -
- - TODO: parameterize tokens on the token norm representation.
- - TODO: maintain an index between types and numbers and vice versa
- - TODO: represent a document as a vector of tokens (and a vector of
- - numbers).
- - TODO: create a bloom filter containing the tokens each document contains
- - for a first pass at searching.
- - TODO: create collocates by slicing the document token vector.
  -}
 
 
@@ -73,8 +65,8 @@ main = do
     let docs = L.sortBy (comparing documentId) . M.elems $ corpusDocuments corpus
 
     colls <-  M.toList . unHash . fold
-          <$> mapM ( fmap (frequencies . collocates 0 2 . fmap tokenNorm)
-                   . documentTokens corpus) docs
+          <$> mapM ( fmap (frequencies . collocates 0 2 . fmap tokenNorm . documentTokens)
+                   . tokenizeDocument corpus) docs
 
     let filterf a ((b, _), _) = a == b
     mapM_ (F.print "{} {}\t{}\n")

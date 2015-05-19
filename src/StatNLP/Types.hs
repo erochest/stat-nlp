@@ -54,11 +54,11 @@ import           Taygeta.Types             (PlainToken, PlainTokenizer,
                                             Tokenizer)
 
 
-type FreqMap a      = MonoidHash a (Sum Int)
-type DocumentId     = FilePath
-type Tag            = T.Text
-type Cache a        = M.HashMap a a
-type DocumentReader = Document -> IO T.Text
+type FreqMap a         = MonoidHash a (Sum Int)
+type DocumentId        = FilePath
+type Tag               = T.Text
+type Cache a           = M.HashMap a a
+type DocumentReader ts = Document ts -> IO T.Text
 
 data IxIndex a = IxIndex
                { indexItems :: !(M.HashMap a Int)
@@ -97,17 +97,18 @@ instance (Hashable k, Eq k, Monoid v) => Monoid (MonoidHash k v) where
     mappend (MHash a) (MHash b) = MHash $ M.unionWith mappend a b
 
 data Corpus p = Corpus
-              { corpusDocuments :: !(M.HashMap T.Text Document)
+              { corpusDocuments :: !(M.HashMap T.Text (Document ()))
               , corpusTokenizer :: !(Tokenizer (Token p PlainToken))
-              , corpusReader    :: !DocumentReader
+              , corpusReader    :: !(DocumentReader ())
               }
 
-data Document = Document
-              { documentId   :: !DocumentId
-              , documentTags :: !(S.HashSet Tag)
-              } deriving (Generic)
+data Document ts = Document
+                 { documentId     :: !DocumentId
+                 , documentTags   :: !(S.HashSet Tag)
+                 , documentTokens :: !ts
+                 } deriving (Generic, Functor)
 
-instance NFData Document
+instance NFData ts => NFData (Document ts)
 
 data Token p t = Token
                { tokenNorm :: !t

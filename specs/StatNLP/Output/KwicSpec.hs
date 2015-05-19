@@ -40,14 +40,14 @@ instance Arbitrary LinePos where
 spec :: Spec
 spec = do
     describe "kwic" $ do
-        let docs     = [ ("<document-0>", Document "<document-0>" S.empty)
-                       , ("<document-1>", Document "<document-1>" S.empty)
-                       , ("<document-2>", Document "<document-2>" S.empty)
-                       , ("<document-3>", Document "<document-3>" S.empty)
-                       , ("<document-4>", Document "<document-4>" S.empty)
-                       ] :: M.HashMap T.Text Document
-            doc5     = [ ("<document-5>", Document "<document-5>" S.empty)
-                       ] :: M.HashMap T.Text Document
+        let docs     = [ ("<document-0>", Document "<document-0>" S.empty ())
+                       , ("<document-1>", Document "<document-1>" S.empty ())
+                       , ("<document-2>", Document "<document-2>" S.empty ())
+                       , ("<document-3>", Document "<document-3>" S.empty ())
+                       , ("<document-4>", Document "<document-4>" S.empty ())
+                       ] :: M.HashMap T.Text (Document ())
+            doc5     = [ ("<document-5>", Document "<document-5>" S.empty ())
+                       ] :: M.HashMap T.Text (Document ())
             contents = [ ("<document-0>", "a b c d e f g h i j k l m n o p q r s t u v w x y z")
                        , ("<document-1>", "aa bb cc dd ee\n\
                                           \ ff gg hh ii jj\n\

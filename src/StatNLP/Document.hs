@@ -14,8 +14,8 @@ import           StatNLP.Text.Tokens
 import           StatNLP.Types
 
 
-initDocument :: DocumentId -> Document
-initDocument input = Document input S.empty
+initDocument :: DocumentId -> Document ()
+initDocument input = Document input S.empty ()
 
-documentKey :: Document -> T.Text
+documentKey :: Document ts -> T.Text
 documentKey = either id id . toText . documentId
