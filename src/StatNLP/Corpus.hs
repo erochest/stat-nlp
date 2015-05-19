@@ -14,12 +14,13 @@ import qualified Data.HashMap.Strict       as M
 import           Data.Monoid
 import qualified Data.Text                 as T
 import           Data.Text.ICU
-import qualified Data.Vector               as V
+import           Data.Traversable
 import           Filesystem
 import           Filesystem.Path.CurrentOS
 import           Prelude                   hiding (FilePath)
 
 import           StatNLP.Document
+import qualified StatNLP.Text.Index        as I
 import           StatNLP.Text.Tokens
 import           StatNLP.Types
 import           StatNLP.Utils
@@ -49,3 +50,14 @@ loadCorpusDirectory tokenizer reader root =
         walk filename = do
             isDir <- isDirectory filename
             if isDir then walkDirectory filename else return [filename]
+
+indexCorpus :: Corpus p -> IO (IxIndex PlainToken, [Document [Token p Int]])
+indexCorpus c = fmap (mapAccumL indexDocumentTokens I.empty)
+              . mapM (tokenizeDocument c)
+              . M.elems
+              $ corpusDocuments c
+
+indexCorpus' :: Corpus p -> IO (IxIndex PlainToken)
+indexCorpus' c = foldlM (fmap (fmap fst) . readIndexDocumentTokens c) I.empty
+               . M.elems
+               $ corpusDocuments c

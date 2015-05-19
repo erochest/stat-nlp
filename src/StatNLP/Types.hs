@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveTraversable     #-}
 {-# LANGUAGE DeriveFunctor         #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleContexts      #-}
@@ -106,7 +107,7 @@ data Document ts = Document
                  { documentId     :: !DocumentId
                  , documentTags   :: !(S.HashSet Tag)
                  , documentTokens :: !ts
-                 } deriving (Generic, Functor)
+                 } deriving (Generic, Functor, Foldable, Traversable)
 
 instance NFData ts => NFData (Document ts)
 

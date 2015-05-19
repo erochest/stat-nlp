@@ -42,10 +42,13 @@ memberIx :: Int -> IxIndex k -> Bool
 memberIx i = M.member i . indexIxs
 
 insertItem :: (Eq k, Hashable k) => k -> IxIndex k -> IxIndex k
-insertItem k i@(IxIndex is ixs s) =
+insertItem k i = fst $ insertItem' k i
+
+insertItem' :: (Eq k, Hashable k) => k -> IxIndex k -> (IxIndex k, Int)
+insertItem' k index@(IxIndex is ixs s) =
     case M.lookup k is of
-        Just _  -> i
-        Nothing -> IxIndex (M.insert k s is) (M.insert s k ixs) $ succ s
+        Just i  -> (index, i)
+        Nothing -> (IxIndex (M.insert k s is) (M.insert s k ixs) (succ s), s)
 
 lookupItem :: (Eq k, Hashable k) => k -> IxIndex k -> Maybe Int
 lookupItem k = M.lookup k . indexItems

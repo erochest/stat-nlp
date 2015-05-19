@@ -18,7 +18,7 @@ import qualified Data.Text           as T
 import           Test.Hspec
 import           Test.QuickCheck
 
-import           StatNLP.Document    (documentKey, readIndexDocument)
+import           StatNLP.Document    (documentKey, readInverseIndexDocument)
 import           StatNLP.Output.Kwic
 import           StatNLP.Text.Index
 import           StatNLP.Text.Tokens (tokenize)
@@ -86,8 +86,8 @@ spec = do
             corpus   = Corpus docs tokenize readDoc
             corpus5  = Corpus doc5 tokenize readDoc
 
-        index  <- runIO $ fold <$> mapM (readIndexDocument corpus ) (M.elems docs)
-        index5 <- runIO $ fold <$> mapM (readIndexDocument corpus5) (M.elems doc5)
+        index  <- runIO $ fold <$> mapM (readInverseIndexDocument corpus ) (M.elems docs)
+        index5 <- runIO $ fold <$> mapM (readInverseIndexDocument corpus5) (M.elems doc5)
         let kwic10 = fmap (L.sortBy (comparing (posLine . snd . kwicPos))) . kwic 10 corpus  index
             kwic5  = fmap (L.sortBy (comparing (posLine . snd . kwicPos))) . kwic 10 corpus5 index5
 
