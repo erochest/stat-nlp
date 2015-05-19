@@ -26,11 +26,11 @@ import           StatNLP.Types
 import           StatNLP.Utils
 
 
-initCorpus :: Tokenizer (Token p) -> DocumentReader -> Corpus p
+initCorpus :: Tokenizer (Token p PlainToken) -> DocumentReader -> Corpus p
 initCorpus t r = Corpus M.empty t r
 
 makeCorpus :: Foldable t
-           => Tokenizer (Token p) -> DocumentReader -> t Document -> Corpus p
+           => Tokenizer (Token p PlainToken) -> DocumentReader -> t Document -> Corpus p
 makeCorpus tokenizer reader docs =
     Corpus (foldl' insert M.empty docs) tokenizer reader
     where
@@ -40,7 +40,7 @@ addDocument :: Corpus p -> Document -> Corpus p
 addDocument c d =
     c { corpusDocuments = M.insert (documentKey d) d (corpusDocuments c) }
 
-loadCorpusDirectory :: Tokenizer (Token p) -> DocumentReader -> FilePath
+loadCorpusDirectory :: Tokenizer (Token p PlainToken) -> DocumentReader -> FilePath
                     -> IO (Corpus p)
 loadCorpusDirectory tokenizer reader root =
         fmap (makeCorpus tokenizer reader . map initDocument)
@@ -51,5 +51,5 @@ loadCorpusDirectory tokenizer reader root =
             isDir <- isDirectory filename
             if isDir then walkDirectory filename else return [filename]
 
-documentTokens :: Corpus p -> Document -> IO [Token p]
+documentTokens :: Corpus p -> Document -> IO [Token p PlainToken]
 documentTokens Corpus{..} d = corpusTokenizer <$> corpusReader d

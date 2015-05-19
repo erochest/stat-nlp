@@ -79,7 +79,7 @@ spec = do
         let goodbye = appendLeft (MContext 10 FT.empty) ([ "good-bye"
                                                          , "cruel"
                                                          , "world"
-                                                         ] :: [Token SpanPos])
+                                                         ] :: [Token SpanPos PlainToken])
             today   = appendLeft (MContext 10 FT.empty) ([ "today"
                                                          , "is"
                                                          , "the"
@@ -93,11 +93,11 @@ spec = do
                                                          , "my"
                                                          , "life"
                                                          , "."
-                                                         ] :: [Token SpanPos])
+                                                         ] :: [Token SpanPos PlainToken])
 
         describe "pushLeft" $ do
             it "should allow one to push context into it." $
-                getContext (pushLeft ("howdy" :: Token SpanPos) (MContext 10 FT.empty))
+                getContext (pushLeft ("howdy" :: Token SpanPos PlainToken) (MContext 10 FT.empty))
                     `shouldBe` ["howdy"]
             it "should limit the amount of data in the context." $
                 getContext goodbye `shouldBe` ["cruel", "world"]
@@ -107,7 +107,7 @@ spec = do
         describe "appendLeft" $ do
             it "should push multiple items into the context." $
                 let c = appendLeft (MContext 100 FT.empty)
-                                      (["one", "two", "three"] :: [Token SpanPos])
+                                      (["one", "two", "three"] :: [Token SpanPos PlainToken])
                 in  getContext c `shouldBe` ["one", "two", "three"]
             it "should push lots of things into the list." $
                 getContext today `shouldBe` ["of", "my", "life", "."]

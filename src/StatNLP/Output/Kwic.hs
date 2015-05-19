@@ -82,12 +82,12 @@ stepLine :: DocumentId
          -> Int
          -> KwicContext
          -> KwicState
-         -> (Int, (T.Text, [Token LinePos]), [LinePos])
+         -> (Int, (T.Text, [Token LinePos PlainToken]), [LinePos])
          -> (KwicState, [Kwic DocumentLine])
 stepLine docId size empty s (lineNo, (line, tokens), hits) =
     concatMapAccum step s . syncHits tokens $ L.sortBy (comparing posStart) hits
     where
-        step :: KwicState -> (Token LinePos, Bool) -> (KwicState, [Kwic DocumentLine])
+        step :: KwicState -> (Token LinePos PlainToken, Bool) -> (KwicState, [Kwic DocumentLine])
         step (context, pending) (Token{tokenPos}, isHit) =
             ((context', pending'), map (pendingKwic' docId) current)
             where
@@ -144,7 +144,7 @@ syncLines allpos@((lp@(Line l _ _:_)):ps) ((lno, line):ls)
     | l == lno  = (lno, line, lp) : syncLines ps ls
     | otherwise = (lno, line, []) : syncLines allpos ls
 
-syncHits :: [Token LinePos] -> [LinePos] -> [(Token LinePos, Bool)]
+syncHits :: [Token LinePos PlainToken] -> [LinePos] -> [(Token LinePos PlainToken, Bool)]
 syncHits [] _  = []
 syncHits ts [] = map (,False) ts
 syncHits (t@Token{tokenPos}:ts) hits =
@@ -156,7 +156,7 @@ concatMapAccum f s (a:as) = let (s', bs)   = f s a
                                 (s'', bs') = concatMapAccum f s' as
                             in  (s'', bs ++ bs')
 
-updateLine :: Int -> Token LinePos -> Token LinePos
+updateLine :: Int -> Token LinePos PlainToken -> Token LinePos PlainToken
 updateLine n t = t { tokenPos = (tokenPos t) { posLine = n } }
 
 sortGroup :: (Ord b, Eq b) => (a -> b) -> [a] -> [[a]]

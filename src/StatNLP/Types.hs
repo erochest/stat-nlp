@@ -77,7 +77,7 @@ instance (Hashable k, Eq k, Monoid v) => Monoid (MonoidHash k v) where
 
 data Corpus p = Corpus
               { corpusDocuments :: !(M.HashMap T.Text Document)
-              , corpusTokenizer :: !(Tokenizer (Token p))
+              , corpusTokenizer :: !(Tokenizer (Token p PlainToken))
               , corpusReader    :: !DocumentReader
               }
 
@@ -88,17 +88,17 @@ data Document = Document
 
 instance NFData Document
 
-data Token p = Token
-             { tokenNorm :: !PlainToken
-             , tokenTag  :: !(Maybe Tag)
-             , tokenPos  :: !p
-             } deriving (Eq, Show, Functor, Generic)
+data Token p t = Token
+               { tokenNorm :: !t
+               , tokenTag  :: !(Maybe Tag)
+               , tokenPos  :: !p
+               } deriving (Eq, Show, Functor, Generic)
 
-instance Hashable p => Hashable (Token p)
+instance (Hashable t, Hashable p) => Hashable (Token p t)
 
-instance NFData p => NFData (Token p)
+instance (NFData t, NFData p) => NFData (Token p t)
 
-instance IsString (Token SpanPos) where
+instance IsString (Token SpanPos PlainToken) where
     fromString norm = Token (T.pack norm) Nothing . Span 0 $ length norm
 
 type DocumentPos p = (DocumentId, p)
@@ -118,10 +118,7 @@ instance Hashable LinePos
 
 instance NFData LinePos
 
-type instance Element (Token p) = T.Text
-
-instance MonoFunctor (Token p) where
-    omap f token = token { tokenNorm = f (tokenNorm token) }
+type instance Element (Token p t) = T.Text
 
 data Context a = Context
                { contextBeforeN :: !Int
@@ -152,7 +149,7 @@ instance FT.Measured (Sum Int) SpanPos where
 instance FT.Measured (Sum Int) LinePos where
     measure (Line _ start end) = Sum $ end - start
 
-instance FT.Measured (Sum Int) p => FT.Measured (Sum Int) (Token p) where
+instance FT.Measured (Sum Int) p => FT.Measured (Sum Int) (Token p t) where
     measure = FT.measure . tokenPos
 
 instance FT.Measured (Sum Int) a => FT.Measured (Sum Int) (x, a) where

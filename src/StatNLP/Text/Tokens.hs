@@ -5,6 +5,7 @@
 module StatNLP.Text.Tokens where
 
 
+import           Data.Hashable
 import qualified Data.HashMap.Strict  as M
 import           Data.Maybe
 import           Data.MonoTraversable
@@ -15,10 +16,10 @@ import           Data.Traversable
 import           StatNLP.Types
 
 
-posTokenizer :: Regex -> Tokenizer (Token SpanPos)
+posTokenizer :: Regex -> Tokenizer (Token SpanPos PlainToken)
 posTokenizer re = mapMaybe matchToken . findAll re
 
-lineTokenizer :: Regex -> Int -> Tokenizer (Token LinePos)
+lineTokenizer :: Regex -> Int -> Tokenizer (Token LinePos PlainToken)
 lineTokenizer re offset input =
     concatMap (uncurry (map . linePos))
         . zipWith (curry (fmap (posTokenizer re))) [0..]
@@ -30,20 +31,20 @@ lineTokenizer re offset input =
                                 (spanEnd tokenPos)
               }
 
-tokenize :: Tokenizer (Token LinePos)
+tokenize :: Tokenizer (Token LinePos PlainToken)
 tokenize = lineTokenizer (regex [UnicodeWord] "[\\p{L}\\p{M}]+") 0
 
-matchToken :: Match -> Maybe (Token SpanPos)
+matchToken :: Match -> Maybe (Token SpanPos PlainToken)
 matchToken g = do
     text  <- group 0 g
     start <- T.length <$> prefix 0 g
     return . Token text Nothing . Span start $ start + T.length text
 
-normalize :: Token p -> Token p
-normalize = omap T.toLower
+normalize :: Token p PlainToken -> Token p PlainToken
+normalize = fmap T.toLower
 
-cacheTokens :: Traversable t
-            => Cache PlainToken -> t (Token a) -> (Cache PlainToken, t (Token a))
+cacheTokens :: (Eq n, Hashable n, Traversable t)
+            => Cache n -> t (Token a n) -> (Cache n, t (Token a n))
 cacheTokens c ts = mapAccumL cacheToken c ts
     where
         cacheToken c t =
