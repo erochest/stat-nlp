@@ -43,7 +43,7 @@ type KwicState   = (KwicContext, [KwicPending])
 
 kwic :: Int
      -> Corpus LinePos
-     -> Index PlainToken DocumentLine
+     -> InverseIndex PlainToken DocumentLine
      -> PlainToken
      -> IO [Kwic DocumentLine]
 kwic context corpus index token =
