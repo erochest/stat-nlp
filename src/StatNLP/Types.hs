@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedLists       #-}
 {-# LANGUAGE TypeFamilies          #-}
 
 
@@ -11,6 +12,7 @@ module StatNLP.Types
     , Cache
     , DocumentId
     , Document(..)
+    , IxIndex(..)
     , InverseIndex(..)
     , MonoidHash(..)
     , PlainToken
@@ -45,6 +47,7 @@ import           Data.String
 import qualified Data.Text                 as T
 import qualified Data.Vector               as V
 import           Filesystem.Path.CurrentOS
+import           GHC.Exts
 import           GHC.Generics
 import           Prelude                   hiding (FilePath)
 import           Taygeta.Types             (PlainToken, PlainTokenizer,
@@ -57,6 +60,23 @@ type Tag            = T.Text
 type Cache a        = M.HashMap a a
 type DocumentReader = Document -> IO T.Text
 
+data IxIndex a = IxIndex
+               { indexItems :: !(M.HashMap a Int)
+               , indexIxs   :: !(M.HashMap Int a)
+               , indexSize  :: !Int
+               } deriving (Show, Eq)
+
+
+instance (Eq a, Hashable a) => IsList (IxIndex a) where
+    type Item (IxIndex a) = a
+    fromList = foldl' insert (IxIndex M.empty M.empty 0)
+        where
+            insert i@(IxIndex is ixs s) k =
+                case M.lookup k is of
+                    Just _  -> i
+                    Nothing -> IxIndex (M.insert k s is) (M.insert s k ixs) $ succ s
+    toList   = M.keys . indexItems
+
 newtype InverseIndex a p = InverseIndex { unIndex :: M.HashMap a [p] }
 
 instance Functor (InverseIndex a) where
@@ -67,7 +87,7 @@ instance (Hashable a, Eq a) => Monoid (InverseIndex a p) where
     mappend (InverseIndex a) (InverseIndex b) =
         InverseIndex $ M.unionWith mappend a b
 
-newtype MonoidHash a p = MHash { unHash  :: M.HashMap a p }
+newtype MonoidHash a p = MHash { unHash :: M.HashMap a p }
 
 instance Functor (MonoidHash a) where
     fmap f (MHash m) = MHash $ fmap f m

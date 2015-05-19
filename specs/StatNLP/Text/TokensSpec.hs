@@ -11,21 +11,9 @@ import           Data.Text.ICU       hiding (normalize)
 import           Test.Hspec
 import           Test.QuickCheck
 
+import           StatNLP.Specs.Utils
 import           StatNLP.Text.Tokens
 import           StatNLP.Types
-
-
-instance Arbitrary T.Text where
-    arbitrary = T.pack <$> arbitrary
-
-newtype Alphabetic = Alphabetic T.Text
-                     deriving (Show)
-
-instance Arbitrary Alphabetic where
-    arbitrary =   Alphabetic
-              .   T.pack
-              <$> listOf
-              (   elements " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 
 spec :: Spec
