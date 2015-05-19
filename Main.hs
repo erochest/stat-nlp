@@ -44,6 +44,14 @@ import           Opts
  - **TODO**: Research Wittgenstein's *use theory of meaning*.
  -
  - TODO: probability distributions
+ -
+ - TODO: parameterize tokens on the token norm representation.
+ - TODO: maintain an index between types and numbers and vice versa
+ - TODO: represent a document as a vector of tokens (and a vector of
+ - numbers).
+ - TODO: create a bloom filter containing the tokens each document contains
+ - for a first pass at searching.
+ - TODO: create collocates by slicing the document token vector.
  -}
 
 
