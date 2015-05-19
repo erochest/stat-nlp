@@ -18,7 +18,7 @@ import qualified Data.Text           as T
 import           Test.Hspec
 import           Test.QuickCheck
 
-import           StatNLP.Document    (documentKey)
+import           StatNLP.Document    (documentKey, readIndexDocument)
 import           StatNLP.Output.Kwic
 import           StatNLP.Text.Index
 import           StatNLP.Text.Tokens (tokenize)

@@ -29,6 +29,7 @@ import           Prelude                   hiding (FilePath, readFile)
 import           Taygeta.Tokenizer         (regexTokenizer)
 
 import           StatNLP.Corpus
+import           StatNLP.Document
 import           StatNLP.Output
 import           StatNLP.Output.Kwic
 import           StatNLP.Text.Collocates

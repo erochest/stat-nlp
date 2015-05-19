@@ -6,7 +6,6 @@ module StatNLP.Corpus
     , makeCorpus
     , addDocument
     , loadCorpusDirectory
-    , tokenizeDocument
     ) where
 
 
@@ -50,8 +49,3 @@ loadCorpusDirectory tokenizer reader root =
         walk filename = do
             isDir <- isDirectory filename
             if isDir then walkDirectory filename else return [filename]
-
-tokenizeDocument :: Corpus p -> Document () -> IO (Document [Token p PlainToken])
-tokenizeDocument Corpus{..} d = do
-    tokens <- corpusTokenizer <$> corpusReader d
-    return $ d { documentTokens = tokens }

@@ -5,11 +5,10 @@ module StatNLP.Text.Index where
 
 
 import           Control.Arrow
+import           Data.Foldable
 import           Data.Hashable
 import qualified Data.HashMap.Strict as M
-import           Data.Foldable
 
-import           StatNLP.Corpus
 import           StatNLP.Types
 
 
@@ -23,18 +22,6 @@ inverseIndex key pos = InverseIndex . toMapWith (++) . fmap (key &&& (pure . pos
 indexTokens :: (Eq t, Hashable t, Functor f, Foldable f)
             => f (Token p t) -> InverseIndex t p
 indexTokens = inverseIndex tokenNorm tokenPos
-
-indexDocumentTokens :: (Eq t, Hashable t, Functor f, Foldable f)
-                    => DocumentId -> f (Token p t) -> InverseIndex t (DocumentPos p)
-indexDocumentTokens dId ts = (dId,) <$> indexTokens ts
-
-indexDocument :: (Eq t, Hashable t, Functor f, Foldable f)
-              => Document (f (Token p t)) -> InverseIndex t (DocumentPos p)
-indexDocument (Document did _ dts) = indexDocumentTokens did dts
-
-readIndexDocument :: Corpus p -> Document ()
-                  -> IO (InverseIndex PlainToken (DocumentPos p))
-readIndexDocument c d = indexDocument <$> tokenizeDocument c d
 
 empty :: IxIndex k
 empty = IxIndex M.empty M.empty 0
