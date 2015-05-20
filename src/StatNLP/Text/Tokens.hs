@@ -5,6 +5,7 @@
 module StatNLP.Text.Tokens where
 
 
+import           Control.Lens
 import           Data.Hashable
 import qualified Data.HashMap.Strict  as M
 import           Data.Maybe
@@ -25,11 +26,10 @@ lineTokenizer re offset input =
         . zipWith (curry (fmap (posTokenizer re))) [0..]
         $ T.lines input
     where
-        linePos line t@Token{tokenPos} =
-            t { tokenPos = Line (offset + line)
-                                (spanStart tokenPos)
-                                (spanEnd tokenPos)
-              }
+        linePos line t@Token{_tokenPos} =
+            t & tokenPos .~ (Line (offset + line)
+                                  (_spanStart _tokenPos)
+                                  (_spanEnd _tokenPos))
 
 tokenize :: Tokenizer (Token LinePos PlainToken)
 tokenize = lineTokenizer (regex [UnicodeWord] "[\\p{L}\\p{M}]+") 0
@@ -48,7 +48,7 @@ cacheTokens :: (Eq n, Hashable n, Traversable t)
 cacheTokens c ts = mapAccumL cacheToken c ts
     where
         cacheToken c t =
-            let norm = tokenNorm t
+            let norm = _tokenNorm t
             in  case M.lookup norm c of
                     Nothing    -> (M.insert norm norm c, t)
-                    Just norm' -> (c, t { tokenNorm = norm' })
+                    Just norm' -> (c, t & tokenNorm .~ norm')

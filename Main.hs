@@ -54,19 +54,19 @@ main = do
     (corpusPath, mtarget) <- parseArgs
 
     -- stopwords
-    stopwords <-  S.fromList . map (tokenNorm . normalize) . tokenize
+    stopwords <-  S.fromList . map (_tokenNorm . normalize) . tokenize
               <$> TIO.readFile "corpora/stopwords/english"
 
-    let reader    = fmap decodeLatin1 . readFile . documentId
-        tokenizer = filter (not . (`S.member` stopwords) . tokenNorm)
+    let reader    = fmap decodeLatin1 . readFile . _documentId
+        tokenizer = filter (not . (`S.member` stopwords) . _tokenNorm)
                   . fmap normalize
                   . tokenize
 
     corpus <- loadCorpusDirectory tokenizer reader corpusPath
-    let docs = L.sortBy (comparing documentId) . M.elems $ corpusDocuments corpus
+    let docs = L.sortBy (comparing _documentId) . M.elems $ _corpusDocuments corpus
 
     colls <-  M.toList . unHash . fold
-          <$> mapM ( fmap (frequencies . collocates 0 2 . fmap tokenNorm . documentTokens)
+          <$> mapM ( fmap (frequencies . collocates 0 2 . fmap _tokenNorm . _documentTokens)
                    . tokenizeDocument corpus) docs
 
     let filterf a ((b, _), _) = a == b

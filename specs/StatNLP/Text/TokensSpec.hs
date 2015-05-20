@@ -26,7 +26,7 @@ spec = do
             property $ \input ->
                 let step (i, prev) j = (j, prev && i < j)
                     tokens = tokenize input
-                    cols   = map (spanStart . tokenPos) tokens
+                    cols   = map (_spanStart . _tokenPos) tokens
                     (_, increasing) = foldl step ((-1), True) cols
                 in  increasing
         it "should tokenize a string based on the regex." $
@@ -87,7 +87,7 @@ spec = do
         it "should lower-case the tokens." $
             let input = "Now is the time for all good people to come to the\
                         \ aid of their country."
-            in  map (tokenNorm . normalize) (tokenize input)
+            in  map (_tokenNorm . normalize) (tokenize input)
                     `shouldBe` [ "now", "is", "the", "time", "for", "all"
                                , "good", "people", "to", "come", "to", "the"
                                , "aid", "of", "their", "country"

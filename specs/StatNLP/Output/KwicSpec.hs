@@ -8,6 +8,7 @@ module StatNLP.Output.KwicSpec where
 
 
 import           Control.Arrow
+import           Control.Lens
 import           Data.Foldable
 import qualified Data.HashMap.Strict as M
 import qualified Data.HashSet        as S
@@ -88,8 +89,8 @@ spec = do
 
         index  <- runIO $ fold <$> mapM (readInverseIndexDocument corpus ) (M.elems docs)
         index5 <- runIO $ fold <$> mapM (readInverseIndexDocument corpus5) (M.elems doc5)
-        let kwic10 = fmap (L.sortBy (comparing (posLine . snd . kwicPos))) . kwic 10 corpus  index
-            kwic5  = fmap (L.sortBy (comparing (posLine . snd . kwicPos))) . kwic 10 corpus5 index5
+        let kwic10 = fmap (L.sortBy (comparing (_posLine . snd . _kwicPos))) . kwic 10 corpus  index
+            kwic5  = fmap (L.sortBy (comparing (_posLine . snd . _kwicPos))) . kwic 10 corpus5 index5
 
         it "should properly format a single hit in a corpus." $
             kwic10 "m" `shouldReturn`
@@ -151,7 +152,7 @@ spec = do
                                               ])]
 
     describe "sliceHits" $ do
-        let updateLine n Token{tokenPos} = tokenPos { posLine = n + posLine tokenPos }
+        let updateLine n Token{_tokenPos} = _tokenPos & posLine +~ n
             tokenizeLines :: T.Text -> [(T.Text, LinePos)]
             tokenizeLines = concat
                           . fmap ( sequenceA

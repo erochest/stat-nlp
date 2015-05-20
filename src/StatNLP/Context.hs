@@ -74,7 +74,7 @@ pushLeft a (MContext size ftree) = MContext size
                                  $ FT.split (>size) ftree
 
 getContext :: FT.Measured (Sum Int) a => MeasuredContext a -> [a]
-getContext = fmap getContextItem . toList . FT.reverse . mContextSeq
+getContext = fmap getContextItem . toList . FT.reverse . _mContextSeq
 
 appendLeft :: (FT.Measured (Sum Int) a, Foldable t, Traversable t)
            => MeasuredContext a -> t a -> MeasuredContext a
@@ -95,4 +95,4 @@ emptyContext :: FT.Measured (Sum Int) a => Int -> MeasuredContext a
 emptyContext size = MContext (Sum size) FT.empty
 
 contextSize :: FT.Measured (Sum Int) a => MeasuredContext a -> Int
-contextSize = getSum . FT.measure . mContextSeq
+contextSize = getSum . FT.measure . _mContextSeq

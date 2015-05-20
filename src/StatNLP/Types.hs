@@ -1,41 +1,83 @@
-{-# LANGUAGE DeriveTraversable     #-}
 {-# LANGUAGE DeriveFunctor         #-}
 {-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DeriveTraversable     #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedLists       #-}
+{-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
 
 
 module StatNLP.Types
     ( Corpus(..)
+    , corpusDocuments
+    , corpusTokenizer
+    , corpusReader
+
     , Cache
     , DocumentId
+
     , Document(..)
+    , documentId
+    , documentTags
+    , documentTokens
+
     , IxIndex(..)
+    , indexItems
+    , indexIxs
+    , indexSize
+
     , InverseIndex(..)
     , MonoidHash(..)
     , PlainToken
     , DocumentPos
     , DocumentLine
+
     , SpanPos(..)
+    , spanStart
+    , spanEnd
+
     , LinePos(..)
+    , posLine
+    , posStart
+    , posEnd
+
     , PlainTokenizer
     , Tokenizer
     , FreqMap
     , Tag
+
     , Token(..)
+    , tokenNorm
+    , tokenTag
+    , tokenPos
+
     , DocumentReader
 
     , Context(..)
+    , contextBeforeN
+    , contextAfterN
+    , contextBefore
+    , contextView
+    , contextAfter
+
     , MeasuredContext(..)
+    , mContextSize
+    , mContextSeq
+
     , ContextItem(..)
+
     , Kwic(..)
+    , kwicPos
+    , kwicPrefix
+    , kwicTarget
+    , kwicSuffix
     ) where
 
 
 import           Control.DeepSeq
+import           Control.Lens              hiding (Context)
 import qualified Data.FingerTree           as FT
 import           Data.Foldable
 import           Data.Hashable
@@ -55,18 +97,37 @@ import           Taygeta.Types             (PlainToken, PlainTokenizer,
                                             Tokenizer)
 
 
+newtype MonoidHash a p = MHash { unHash :: M.HashMap a p }
+
+instance Functor (MonoidHash a) where
+    fmap f (MHash m) = MHash $ fmap f m
+
+instance (Hashable k, Eq k, Monoid v) => Monoid (MonoidHash k v) where
+    mempty = MHash mempty
+    mappend (MHash a) (MHash b) = MHash $ M.unionWith mappend a b
+
 type FreqMap a         = MonoidHash a (Sum Int)
 type DocumentId        = FilePath
 type Tag               = T.Text
 type Cache a           = M.HashMap a a
+
+data Document ts = Document
+                 { _documentId     :: !DocumentId
+                 , _documentTags   :: !(S.HashSet Tag)
+                 , _documentTokens :: !ts
+                 } deriving (Generic, Functor, Foldable, Traversable)
+makeLenses ''Document
+
+instance NFData ts => NFData (Document ts)
+
 type DocumentReader ts = Document ts -> IO T.Text
 
 data IxIndex a = IxIndex
-               { indexItems :: !(M.HashMap a Int)
-               , indexIxs   :: !(M.HashMap Int a)
-               , indexSize  :: !Int
+               { _indexItems :: !(M.HashMap a Int)
+               , _indexIxs   :: !(M.HashMap Int a)
+               , _indexSize  :: !Int
                } deriving (Show, Eq)
-
+makeLenses ''IxIndex
 
 instance (Eq a, Hashable a) => IsList (IxIndex a) where
     type Item (IxIndex a) = a
@@ -76,7 +137,7 @@ instance (Eq a, Hashable a) => IsList (IxIndex a) where
                 case M.lookup k is of
                     Just _  -> i
                     Nothing -> IxIndex (M.insert k s is) (M.insert s k ixs) $ succ s
-    toList   = M.keys . indexItems
+    toList   = M.keys . _indexItems
 
 newtype InverseIndex a p = InverseIndex { unIndex :: M.HashMap a [p] }
 
@@ -88,34 +149,28 @@ instance (Hashable a, Eq a) => Monoid (InverseIndex a p) where
     mappend (InverseIndex a) (InverseIndex b) =
         InverseIndex $ M.unionWith mappend a b
 
-newtype MonoidHash a p = MHash { unHash :: M.HashMap a p }
+data SpanPos = Span { _spanStart :: !Int, _spanEnd :: !Int }
+             deriving (Show, Eq, Generic)
+makeLenses ''SpanPos
 
-instance Functor (MonoidHash a) where
-    fmap f (MHash m) = MHash $ fmap f m
+instance Hashable SpanPos
 
-instance (Hashable k, Eq k, Monoid v) => Monoid (MonoidHash k v) where
-    mempty = MHash mempty
-    mappend (MHash a) (MHash b) = MHash $ M.unionWith mappend a b
+instance NFData SpanPos
 
-data Corpus p = Corpus
-              { corpusDocuments :: !(M.HashMap T.Text (Document ()))
-              , corpusTokenizer :: !(Tokenizer (Token p PlainToken))
-              , corpusReader    :: !(DocumentReader ())
-              }
+data LinePos = Line { _posLine :: !Int, _posStart :: !Int, _posEnd :: !Int }
+             deriving (Show, Eq, Ord, Generic)
+makeLenses ''LinePos
 
-data Document ts = Document
-                 { documentId     :: !DocumentId
-                 , documentTags   :: !(S.HashSet Tag)
-                 , documentTokens :: !ts
-                 } deriving (Generic, Functor, Foldable, Traversable)
+instance Hashable LinePos
 
-instance NFData ts => NFData (Document ts)
+instance NFData LinePos
 
 data Token p t = Token
-               { tokenNorm :: !t
-               , tokenTag  :: !(Maybe Tag)
-               , tokenPos  :: !p
+               { _tokenNorm :: !t
+               , _tokenTag  :: !(Maybe Tag)
+               , _tokenPos  :: !p
                } deriving (Eq, Show, Functor, Generic)
+makeLenses ''Token
 
 instance (Hashable t, Hashable p) => Hashable (Token p t)
 
@@ -124,47 +179,42 @@ instance (NFData t, NFData p) => NFData (Token p t)
 instance IsString (Token SpanPos PlainToken) where
     fromString norm = Token (T.pack norm) Nothing . Span 0 $ length norm
 
+type instance Element (Token p t) = T.Text
+
+data Corpus p = Corpus
+              { _corpusDocuments :: !(M.HashMap T.Text (Document ()))
+              , _corpusTokenizer :: !(Tokenizer (Token p PlainToken))
+              , _corpusReader    :: !(DocumentReader ())
+              }
+makeLenses ''Corpus
+
 type DocumentPos p = (DocumentId, p)
 type DocumentLine  = DocumentPos LinePos
 
-data SpanPos = Span { spanStart :: !Int, spanEnd :: !Int }
-             deriving (Show, Eq, Generic)
-
-instance Hashable SpanPos
-
-instance NFData SpanPos
-
-data LinePos = Line { posLine :: !Int, posStart :: !Int, posEnd :: !Int }
-             deriving (Show, Eq, Ord, Generic)
-
-instance Hashable LinePos
-
-instance NFData LinePos
-
-type instance Element (Token p t) = T.Text
-
 data Context a = Context
-               { contextBeforeN :: !Int
-               , contextAfterN  :: !Int
-               , contextBefore  :: !(Seq a)
-               , contextView    :: !a
-               , contextAfter   :: !(Seq a)
+               { _contextBeforeN :: !Int
+               , _contextAfterN  :: !Int
+               , _contextBefore  :: !(Seq a)
+               , _contextView    :: !a
+               , _contextAfter   :: !(Seq a)
                } deriving (Show, Eq)
+makeLenses ''Context
 
 instance Functor Context where
     fmap f (Context b a before current after) =
         Context b a (fmap f before) (f current) (fmap f after)
-
-data MeasuredContext a = MContext
-                       { mContextSize :: !(Sum Int)
-                       , mContextSeq  :: !(FT.FingerTree (Sum Int) (ContextItem a))
-                       } deriving (Show, Eq)
 
 newtype ContextItem a = CItem { getContextItem :: a }
                         deriving (Show, Eq)
 
 instance IsString a => IsString (ContextItem a) where
     fromString = CItem . fromString
+
+data MeasuredContext a = MContext
+                       { _mContextSize :: !(Sum Int)
+                       , _mContextSeq  :: !(FT.FingerTree (Sum Int) (ContextItem a))
+                       } deriving (Show, Eq)
+makeLenses ''MeasuredContext
 
 instance FT.Measured (Sum Int) SpanPos where
     measure (Span start end) = Sum $ end - start
@@ -173,7 +223,7 @@ instance FT.Measured (Sum Int) LinePos where
     measure (Line _ start end) = Sum $ end - start
 
 instance FT.Measured (Sum Int) p => FT.Measured (Sum Int) (Token p t) where
-    measure = FT.measure . tokenPos
+    measure = FT.measure . _tokenPos
 
 instance FT.Measured (Sum Int) a => FT.Measured (Sum Int) (x, a) where
     measure = FT.measure . snd
@@ -185,8 +235,9 @@ instance FT.Measured (Sum Int) T.Text where
     measure = Sum . T.length
 
 data Kwic p = Kwic
-            { kwicPos    :: !p
-            , kwicPrefix :: !T.Text
-            , kwicTarget :: !T.Text
-            , kwicSuffix :: !T.Text
+            { _kwicPos    :: !p
+            , _kwicPrefix :: !T.Text
+            , _kwicTarget :: !T.Text
+            , _kwicSuffix :: !T.Text
             } deriving (Show, Eq, Functor)
+makeLenses ''Kwic

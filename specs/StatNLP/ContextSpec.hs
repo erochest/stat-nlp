@@ -47,20 +47,20 @@ spec = do
         describe "pushR" $ do
             it "should maintain the size of the left context." $
                 property $ \(c :: Context Int) (xs :: [Int]) ->
-                    length (contextBefore $ foldl' (flip pushR) c xs) == contextBeforeN c
+                    length (_contextBefore $ foldl' (flip pushR) c xs) == _contextBeforeN c
             it "should maintain the size of the right context." $
                 property $ \(c :: Context Int) (xs :: [Int]) ->
-                    length (contextAfter $ foldl' (flip pushR) c xs) == contextAfterN c
+                    length (_contextAfter $ foldl' (flip pushR) c xs) == _contextAfterN c
             it "should shift everything over one." $
                 (0 `pushR` Context 2 2 [1, 2] 3 [4, 5]) `shouldBe` (Context 2 2 [0, 1] 2 [3, 4])
 
         describe "pushL" $ do
             it "should maintain the size of the left context." $
                 property $ \(c :: Context Int) (xs :: [Int]) ->
-                    length (contextBefore $ foldl' pushL c xs) == contextBeforeN c
+                    length (_contextBefore $ foldl' pushL c xs) == _contextBeforeN c
             it "should maintain the size of the right context." $
                 property $ \(c :: Context Int) (xs :: [Int]) ->
-                    length (contextAfter $ foldl' pushL c xs) == contextAfterN c
+                    length (_contextAfter $ foldl' pushL c xs) == _contextAfterN c
             it "should shift everything over one." $
                 (Context 2 2 [1, 2] 3 [4, 5] `pushL` 6) `shouldBe` (Context 2 2 [2, 3] 4 [5, 6])
 
@@ -102,7 +102,7 @@ spec = do
             it "should limit the amount of data in the context." $
                 getContext goodbye `shouldBe` ["cruel", "world"]
             it "should allow one item of data over the limit." $
-                FT.measure (mContextSeq goodbye) `shouldBe` Sum 12
+                FT.measure (_mContextSeq goodbye) `shouldBe` Sum 12
 
         describe "appendLeft" $ do
             it "should push multiple items into the context." $

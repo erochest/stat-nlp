@@ -9,6 +9,7 @@ module StatNLP.Corpus
     ) where
 
 
+import           Control.Lens
 import           Data.Foldable
 import qualified Data.HashMap.Strict       as M
 import           Data.Monoid
@@ -38,7 +39,7 @@ makeCorpus tokenizer reader docs =
 
 addDocument :: Corpus p -> Document () -> Corpus p
 addDocument c d =
-    c { corpusDocuments = M.insert (documentKey d) d (corpusDocuments c) }
+    c & corpusDocuments .~ M.insert (documentKey d) d (_corpusDocuments c)
 
 loadCorpusDirectory :: Tokenizer (Token p PlainToken) -> DocumentReader () -> FilePath
                     -> IO (Corpus p)
@@ -55,9 +56,9 @@ indexCorpus :: Corpus p -> IO (IxIndex PlainToken, [Document [Token p Int]])
 indexCorpus c = fmap (mapAccumL indexDocumentTokens I.empty)
               . mapM (tokenizeDocument c)
               . M.elems
-              $ corpusDocuments c
+              $ _corpusDocuments c
 
 indexCorpus' :: Corpus p -> IO (IxIndex PlainToken)
 indexCorpus' c = foldlM (fmap (fmap fst) . readIndexDocumentTokens c) I.empty
                . M.elems
-               $ corpusDocuments c
+               $ _corpusDocuments c
