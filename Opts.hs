@@ -1,10 +1,8 @@
 module Opts where
 
 
-import qualified Data.Text                 as T
-import           Filesystem.Path.CurrentOS
+import qualified Data.Text           as T
 import           Options.Applicative
-import           Prelude                   hiding (FilePath)
 
 
 type Args = (FilePath, Maybe T.Text)
@@ -26,7 +24,7 @@ opts = info (helper <*> opts')
             <> header "stat-nlp")
 
 fileOpt :: ReadM FilePath
-fileOpt = decodeString <$> str
+fileOpt = str
 
 textOpt :: ReadM T.Text
 textOpt = T.pack <$> str

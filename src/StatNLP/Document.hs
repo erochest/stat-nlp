@@ -9,13 +9,10 @@ module StatNLP.Document where
 import           Control.Lens
 import           Data.Either
 import           Data.Hashable
-import qualified Data.HashSet              as S
-import qualified Data.Text                 as T
+import qualified Data.HashSet        as S
+import qualified Data.Text           as T
 import           Data.Text.ICU
 import           Data.Traversable
-import           Filesystem
-import           Filesystem.Path.CurrentOS
-import           Prelude                   hiding (FilePath)
 
 import           StatNLP.Text.Index
 import           StatNLP.Text.Tokens
@@ -26,7 +23,7 @@ initDocument :: DocumentId -> Document ()
 initDocument input = Document input S.empty ()
 
 documentKey :: Document ts -> T.Text
-documentKey = either id id . toText . _documentId
+documentKey = T.pack . _documentId
 
 inverseIndexDocumentTokens :: (Eq t, Hashable t, Functor f, Foldable f)
                            => DocumentId -> f (Token p t) -> InverseIndex t (DocumentPos p)

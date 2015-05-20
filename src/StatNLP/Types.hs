@@ -77,24 +77,21 @@ module StatNLP.Types
 
 
 import           Control.DeepSeq
-import           Control.Lens              hiding (Context)
-import qualified Data.FingerTree           as FT
+import           Control.Lens         hiding (Context)
+import qualified Data.FingerTree      as FT
 import           Data.Foldable
 import           Data.Hashable
-import qualified Data.HashMap.Strict       as M
-import qualified Data.HashSet              as S
+import qualified Data.HashMap.Strict  as M
+import qualified Data.HashSet         as S
 import           Data.Monoid
 import           Data.MonoTraversable
-import           Data.Sequence             (Seq)
+import           Data.Sequence        (Seq)
 import           Data.String
-import qualified Data.Text                 as T
-import qualified Data.Vector               as V
-import           Filesystem.Path.CurrentOS
+import qualified Data.Text            as T
+import qualified Data.Vector          as V
 import           GHC.Exts
 import           GHC.Generics
-import           Prelude                   hiding (FilePath)
-import           Taygeta.Types             (PlainToken, PlainTokenizer,
-                                            Tokenizer)
+import           Taygeta.Types        (PlainToken, PlainTokenizer, Tokenizer)
 
 
 newtype MonoidHash a p = MHash { unHash :: M.HashMap a p }

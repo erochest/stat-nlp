@@ -11,17 +11,15 @@ module StatNLP.Corpus
 
 import           Control.Lens
 import           Data.Foldable
-import qualified Data.HashMap.Strict       as M
+import qualified Data.HashMap.Strict as M
 import           Data.Monoid
-import qualified Data.Text                 as T
+import qualified Data.Text           as T
 import           Data.Text.ICU
 import           Data.Traversable
-import           Filesystem
-import           Filesystem.Path.CurrentOS
-import           Prelude                   hiding (FilePath)
+import           System.Directory
 
 import           StatNLP.Document
-import qualified StatNLP.Text.Index        as I
+import qualified StatNLP.Text.Index  as I
 import           StatNLP.Text.Tokens
 import           StatNLP.Types
 import           StatNLP.Utils
@@ -46,10 +44,10 @@ loadCorpusDirectory :: Tokenizer (Token p PlainToken) -> DocumentReader () -> Fi
 loadCorpusDirectory tokenizer reader root =
         fmap (makeCorpus tokenizer reader . map initDocument)
     .   walk
-    =<< canonicalizePath root
+    =<< makeAbsolute root
     where
         walk filename = do
-            isDir <- isDirectory filename
+            isDir <- doesDirectoryExist filename
             if isDir then walkDirectory filename else return [filename]
 
 indexCorpus :: Corpus p -> IO (IxIndex PlainToken, [Document [Token p Int]])

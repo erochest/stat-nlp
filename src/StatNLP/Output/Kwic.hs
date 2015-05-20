@@ -13,25 +13,25 @@ module StatNLP.Output.Kwic
     ) where
 
 
-import           Control.Arrow             ((&&&))
+import           Control.Arrow          ((&&&))
 import           Control.Lens
 import           Control.Monad
 import           Data.Bifunctor
 import           Data.Char
 import           Data.Either
-import qualified Data.FingerTree           as FT
+import qualified Data.FingerTree        as FT
 import           Data.Foldable
-import qualified Data.HashMap.Strict       as M
-import qualified Data.List                 as L
+import qualified Data.HashMap.Strict    as M
+import qualified Data.List              as L
 import           Data.Maybe
 import           Data.Monoid
 import           Data.Ord
-import qualified Data.Sequence             as Seq
-import qualified Data.Text                 as T
-import qualified Data.Text.Format          as F
-import qualified Data.Text.Lazy            as TL
+import qualified Data.Sequence          as Seq
+import qualified Data.Text              as T
+import qualified Data.Text.Format       as F
+import qualified Data.Text.Lazy         as TL
 import           Data.Text.Lazy.Builder
-import           Filesystem.Path.CurrentOS
+import           System.FilePath
 
 import           StatNLP.Context
 import           StatNLP.Document
@@ -55,17 +55,17 @@ kwic context corpus index token =
 buildKwic :: Int -> Kwic DocumentLine -> Builder
 buildKwic context Kwic{..} =
     let (docId, Line{..}) = _kwicPos
-        basename          = encodeString $ filename docId
-    in   F.build "{}:{}:{}  {}  **{}**  {}\n"
-                 ( F.left 25 ' ' basename, F.left 7 ' ' _posLine, F.left 3 ' ' _posStart
-                 , F.left context ' ' $ T.takeEnd context _kwicPrefix
-                 , _kwicTarget, T.take context _kwicSuffix
-                 )
+        basename          = takeFileName docId
+    in  F.build "{}:{}:{}  {}  **{}**  {}\n"
+                ( F.left 25 ' ' basename, F.left 7 ' ' _posLine, F.left 3 ' ' _posStart
+                , F.left context ' ' $ T.takeEnd context _kwicPrefix
+                , _kwicTarget, T.take context _kwicSuffix
+                )
 
 kwicDoc :: Int -> Corpus LinePos -> [DocumentLine] -> IO [Kwic DocumentLine]
 kwicDoc _ _ [] = return []
 kwicDoc context corpus docs@((docId, _):_) =
-    case M.lookup (either id id $ toText docId) (_corpusDocuments corpus) of
+    case M.lookup (T.pack docId) (_corpusDocuments corpus) of
         Nothing  -> return []
         Just doc ->  uncurry (++)
                  .   first (fmap (pendingKwic' docId) . snd)

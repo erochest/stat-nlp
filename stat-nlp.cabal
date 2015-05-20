@@ -38,14 +38,14 @@ library
                      , conduit-extra
                      , containers
                      , deepseq
+                     , directory
+                     , filepath
                      , fingertree
                      , hashable
                      , lens
                      , linear
                      , mono-traversable
                      , statistics
-                     , system-fileio
-                     , system-filepath
                      , taygeta
                      , text
                      , text-format
@@ -63,6 +63,7 @@ executable stat-nlp
   build-depends:       base >=4.8 && <5
                      , stat-nlp
                      , bifunctors
+                     , bytestring
                      , conduit
                      , conduit-combinators
                      , conduit-extra
@@ -71,8 +72,6 @@ executable stat-nlp
                      , lens
                      , mtl
                      , optparse-applicative
-                     , system-fileio
-                     , system-filepath
                      , taygeta
                      , text
                      , text-format

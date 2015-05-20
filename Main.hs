@@ -7,26 +7,24 @@ module Main where
 import           Control.DeepSeq
 import           Control.Monad.Identity
 import           Data.Bifunctor
+import qualified Data.ByteString         as B
 import           Data.Foldable
 import           Data.Hashable
-import qualified Data.HashMap.Strict       as M
-import qualified Data.HashSet              as S
-import qualified Data.List                 as L
+import qualified Data.HashMap.Strict     as M
+import qualified Data.HashSet            as S
+import qualified Data.List               as L
 import           Data.Monoid
 import           Data.Ord
-import qualified Data.Text                 as T
-import           Data.Text.Encoding        (decodeLatin1)
-import qualified Data.Text.Format          as F
-import qualified Data.Text.IO              as TIO
-import           Data.Text.Lazy            (toStrict)
-import           Data.Text.Lazy.Builder    (toLazyText)
+import qualified Data.Text               as T
+import           Data.Text.Encoding      (decodeLatin1)
+import qualified Data.Text.Format        as F
+import qualified Data.Text.IO            as TIO
+import           Data.Text.Lazy          (toStrict)
+import           Data.Text.Lazy.Builder  (toLazyText)
 import           Data.Time
 import           Data.Traversable
-import qualified Data.Vector               as V
-import           Filesystem
-import           Filesystem.Path.CurrentOS hiding (concat)
-import           Prelude                   hiding (FilePath, readFile)
-import           Taygeta.Tokenizer         (regexTokenizer)
+import qualified Data.Vector             as V
+import           Taygeta.Tokenizer       (regexTokenizer)
 
 import           StatNLP.Corpus
 import           StatNLP.Document
@@ -57,7 +55,7 @@ main = do
     stopwords <-  S.fromList . map (_tokenNorm . normalize) . tokenize
               <$> TIO.readFile "corpora/stopwords/english"
 
-    let reader    = fmap decodeLatin1 . readFile . _documentId
+    let reader    = fmap decodeLatin1 . B.readFile . _documentId
         tokenizer = filter (not . (`S.member` stopwords) . _tokenNorm)
                   . fmap normalize
                   . tokenize
