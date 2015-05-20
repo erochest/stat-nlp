@@ -6,6 +6,9 @@ module StatNLP.Corpus
     , makeCorpus
     , addDocument
     , loadCorpusDirectory
+    , indexCorpus
+    , indexCorpus'
+    , inverseIndexCorpus
     ) where
 
 
@@ -60,3 +63,9 @@ indexCorpus' :: Corpus p -> IO (IxIndex PlainToken)
 indexCorpus' c = foldlM (fmap (fmap fst) . readIndexDocumentTokens c) I.empty
                . M.elems
                $ _corpusDocuments c
+
+inverseIndexCorpus :: Corpus p -> IO (InverseIndex PlainToken (DocumentPos p))
+inverseIndexCorpus c = fmap mconcat
+                     . mapM (readInverseIndexDocument c)
+                     . M.elems
+                     $ _corpusDocuments c
