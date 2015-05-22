@@ -21,6 +21,7 @@ module StatNLP.Types
     , Document(..)
     , documentId
     , documentTags
+    , documentTypes
     , documentTokens
 
     , IxIndex(..)
@@ -77,21 +78,24 @@ module StatNLP.Types
 
 
 import           Control.DeepSeq
-import           Control.Lens         hiding (Context)
-import qualified Data.FingerTree      as FT
+import           Control.Lens          hiding (Context)
+import           Data.BloomFilter      (Bloom)
+import qualified Data.BloomFilter.Hash as H
+import qualified Data.FingerTree       as FT
 import           Data.Foldable
 import           Data.Hashable
-import qualified Data.HashMap.Strict  as M
-import qualified Data.HashSet         as S
+import qualified Data.HashMap.Strict   as M
+import qualified Data.HashSet          as S
 import           Data.Monoid
 import           Data.MonoTraversable
-import           Data.Sequence        (Seq)
+import           Data.Sequence         (Seq)
 import           Data.String
-import qualified Data.Text            as T
-import qualified Data.Vector          as V
+import qualified Data.Text             as T
+import           Data.Text.Encoding    (encodeUtf8)
+import qualified Data.Vector           as V
 import           GHC.Exts
 import           GHC.Generics
-import           Taygeta.Types        (PlainToken, PlainTokenizer, Tokenizer)
+import           Taygeta.Types         (PlainToken, PlainTokenizer, Tokenizer)
 
 
 newtype MonoidHash a p = MHash { unHash :: M.HashMap a p }
@@ -103,21 +107,22 @@ instance (Hashable k, Eq k, Monoid v) => Monoid (MonoidHash k v) where
     mempty = MHash mempty
     mappend (MHash a) (MHash b) = MHash $ M.unionWith mappend a b
 
-type FreqMap a         = MonoidHash a (Sum Int)
-type DocumentId        = FilePath
-type Tag               = T.Text
-type Cache a           = M.HashMap a a
+type FreqMap a  = MonoidHash a (Sum Int)
+type DocumentId = FilePath
+type Tag        = T.Text
+type Cache a    = M.HashMap a a
 
-data Document ts = Document
-                 { _documentId     :: !DocumentId
-                 , _documentTags   :: !(S.HashSet Tag)
-                 , _documentTokens :: !ts
-                 } deriving (Generic, Functor, Foldable, Traversable)
+data Document b ts = Document
+                   { _documentId     :: !DocumentId
+                   , _documentTags   :: !(S.HashSet Tag)
+                   , _documentTypes  :: !(Maybe (Bloom b))
+                   , _documentTokens :: !ts
+                   } deriving (Generic, Functor, Foldable, Traversable)
 makeLenses ''Document
 
-instance NFData ts => NFData (Document ts)
+instance (NFData b, NFData ts) => NFData (Document b ts)
 
-type DocumentReader ts = Document ts -> IO T.Text
+type DocumentReader b ts = Document b ts -> IO T.Text
 
 data IxIndex a = IxIndex
                { _indexItems :: !(M.HashMap a Int)
@@ -178,11 +183,15 @@ instance IsString (Token SpanPos PlainToken) where
 
 type instance Element (Token p t) = T.Text
 
-data Corpus p = Corpus
-              { _corpusDocuments :: !(M.HashMap T.Text (Document ()))
-              , _corpusTokenizer :: !(Tokenizer (Token p PlainToken))
-              , _corpusReader    :: !(DocumentReader ())
-              }
+instance H.Hashable (Token p PlainToken) where
+    hashIO32 (Token pt _ _) salt = H.hashIO32 (encodeUtf8 pt) salt
+    hashIO64 (Token pt _ _) salt = H.hashIO64 (encodeUtf8 pt) salt
+
+data Corpus b p = Corpus
+                { _corpusDocuments :: !(M.HashMap T.Text (Document b ()))
+                , _corpusTokenizer :: !(Tokenizer (Token p PlainToken))
+                , _corpusReader    :: !(DocumentReader b ())
+                }
 makeLenses ''Corpus
 
 type DocumentPos p = (DocumentId, p)

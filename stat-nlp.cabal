@@ -32,6 +32,7 @@ library
   -- other-extensions:    
   build-depends:       base >=4.8 && <5
                      , bifunctors
+                     , bloomfilter
                      , comonad
                      , conduit
                      , conduit-combinators
@@ -63,6 +64,7 @@ executable stat-nlp
   build-depends:       base >=4.8 && <5
                      , stat-nlp
                      , bifunctors
+                     , bloomfilter
                      , bytestring
                      , conduit
                      , conduit-combinators

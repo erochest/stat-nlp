@@ -1,3 +1,4 @@
+{-# LANGUAGE NamedFieldPuns    #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 
@@ -7,12 +8,15 @@ module Main where
 import           Control.DeepSeq
 import           Control.Monad.Identity
 import           Data.Bifunctor
+import           Data.BloomFilter.Easy
+import qualified Data.BloomFilter.Easy   as BF
 import qualified Data.ByteString         as B
 import           Data.Foldable
 import           Data.Hashable
 import qualified Data.HashMap.Strict     as M
 import qualified Data.HashSet            as S
 import qualified Data.List               as L
+import           Data.Maybe
 import           Data.Monoid
 import           Data.Ord
 import qualified Data.Text               as T
@@ -24,7 +28,10 @@ import           Data.Text.Lazy.Builder  (toLazyText)
 import           Data.Time
 import           Data.Traversable
 import qualified Data.Vector             as V
+import           GHC.Exts
 import           Taygeta.Tokenizer       (regexTokenizer)
+
+import           Debug.Trace
 
 import           StatNLP.Corpus
 import           StatNLP.Document
@@ -59,12 +66,27 @@ main = do
         tokenizer = filter (not . (`S.member` stopwords) . _tokenNorm)
                   . fmap normalize
                   . tokenize
+        docToken  = readDocumentTypes' ( fmap (tokenizer . decodeLatin1)
+                                       . B.readFile
+                                       . _documentId
+                                       )
+        -- docToken  = return
 
-    corpus <- loadCorpusDirectory tokenizer reader corpusPath
-    let docs = L.sortBy (comparing _documentId) . M.elems $ _corpusDocuments corpus
+    F.print "Reading corpus from {}\n" $ F.Only corpusPath
+    corpus <- loadCorpusDirectory tokenizer reader docToken corpusPath
+    let filterToken target Document{_documentTypes} =
+            maybe True (token `BF.elem`) _documentTypes
+            where
+                token = Token target Nothing . Line 0 0 $ T.length target
+        docs = L.sortBy (comparing _documentId)
+             . maybe id (filter . filterToken) mtarget
+             . M.elems
+             $ _corpusDocuments corpus
+    F.print "Documents potentially containing '{}' : {} / {}\n"
+            (fromMaybe "0" mtarget, L.length docs, M.size (_corpusDocuments corpus))
 
     colls <-  M.toList . unHash . fold
-          <$> mapM ( fmap (frequencies . collocates 0 2 . fmap _tokenNorm . _documentTokens)
+          <$> mapM ( fmap (frequencies . collocates 0 3 . fmap _tokenNorm . _documentTokens)
                    . tokenizeDocument corpus) docs
 
     let filterf a ((b, _), _) = a == b

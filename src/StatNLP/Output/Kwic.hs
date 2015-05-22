@@ -43,7 +43,7 @@ type KwicPending = (LinePos, T.Text, T.Text, KwicContext)
 type KwicState   = (KwicContext, [KwicPending])
 
 kwic :: Int
-     -> Corpus LinePos
+     -> Corpus b LinePos
      -> InverseIndex PlainToken DocumentLine
      -> PlainToken
      -> IO [Kwic DocumentLine]
@@ -62,7 +62,7 @@ buildKwic context Kwic{..} =
                 , _kwicTarget, T.take context _kwicSuffix
                 )
 
-kwicDoc :: Int -> Corpus LinePos -> [DocumentLine] -> IO [Kwic DocumentLine]
+kwicDoc :: Int -> Corpus b LinePos -> [DocumentLine] -> IO [Kwic DocumentLine]
 kwicDoc _ _ [] = return []
 kwicDoc context corpus docs@((docId, _):_) =
     case M.lookup (T.pack docId) (_corpusDocuments corpus) of

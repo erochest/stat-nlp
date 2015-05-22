@@ -24,7 +24,8 @@ walkDirectory = walk <=< makeAbsolute
     where
         walk :: FilePath -> IO [FilePath]
         walk root = do
-            children      <-  fmap (root </>) . filter isHidden
+            putStrLn $ "Walking " ++ root
+            children      <-  fmap (root </>) . filter (not . isHidden)
                           <$> getDirectoryContents root
             (dirs, files) <-  partitionM doesDirectoryExist children
             (files ++) . concat <$> mapM walk dirs
@@ -32,9 +33,3 @@ walkDirectory = walk <=< makeAbsolute
         isHidden []      = True
         isHidden ('.':_) = True
         isHidden _       = False
-
-    {-
-     - children <- fmap (root </>) <$> listDirectory root
-     - (dirs, files) <- partitionM isDirectory children
-     - (files ++) <$> fmap concat (mapM walkDirectory dirs)
-     -}
