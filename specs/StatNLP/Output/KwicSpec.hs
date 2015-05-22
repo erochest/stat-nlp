@@ -156,7 +156,7 @@ spec = do
             tokenizeLines :: T.Text -> [(T.Text, LinePos)]
             tokenizeLines = concat
                           . fmap ( sequenceA
-                                 . uncurry (\n -> fmap (fmap (updateLine n)))
+                                 . uncurry (fmap . fmap . updateLine)
                                  . fmap (id &&& tokenize))
                           . zip [0..]
                           . T.lines

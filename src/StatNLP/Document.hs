@@ -7,6 +7,7 @@ module StatNLP.Document where
 
 
 import           Control.Lens
+import           Control.Monad
 import           Data.BloomFilter.Easy
 import qualified Data.BloomFilter.Hash as H
 import           Data.Either
@@ -36,7 +37,7 @@ updateDocumentTypes d = setDocumentTypes d $ d ^.. documentTokens . traverse . t
 readDocumentTypes :: Corpus (Token p PlainToken) p
                   -> Document (Token p PlainToken) ()
                   -> IO (Document (Token p PlainToken) ())
-readDocumentTypes c d = fmap (const ()) <$> tokenizeDocument c d
+readDocumentTypes c d = void <$> tokenizeDocument c d
 
 readDocumentTypes' :: H.Hashable t
                    => (Document a () -> IO [t]) -> Document a () -> IO (Document t ())

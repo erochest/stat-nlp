@@ -70,12 +70,12 @@ collocatePairs before after = fmap toPair . collocates before after
 
 collocatesAround :: Int -> Int -> Int -> V.Vector a -> [Collocate a]
 collocatesAround before after center v =
-    mapMaybe ( ap (fmap uncurry (fmap Collocate mcenter))
+    mapMaybe ( ap (fmap (uncurry . Collocate) mcenter)
              . fmap swap
              . sequenceA
              . fmap (v !?)
+             . (id &&& (+center))
              )
-        . map (id &&& (+center))
         $ filter (/=0) [(-before) .. after]
     where
         mcenter = v !? center
@@ -93,8 +93,8 @@ initState = CS S.empty Nothing S.empty 0
 left :: S.Seq (a, Int) -> S.Seq (a, Int) -> S.Seq (a, Int) -> Int -> CollState a
 left empty nonEmpty seq n =
     case S.viewl seq of
-        EmptyL  -> (CS empty    Nothing  S.empty n)
-        x :< xs -> (CS nonEmpty (Just x) xs      n)
+        EmptyL  -> CS empty    Nothing  S.empty n
+        x :< xs -> CS nonEmpty (Just x) xs      n
 
 step :: Int -> Int -> CollState a -> a -> (CollState a, S.Seq (Collocate a))
 step before after s a = let next = shift before after s (a, csI s)

@@ -52,7 +52,7 @@ spec = do
                 property $ \(c :: Context Int) (xs :: [Int]) ->
                     length (_contextAfter $ foldl' (flip pushR) c xs) == _contextAfterN c
             it "should shift everything over one." $
-                (0 `pushR` Context 2 2 [1, 2] 3 [4, 5]) `shouldBe` (Context 2 2 [0, 1] 2 [3, 4])
+                (0 `pushR` Context 2 2 [1, 2] 3 [4, 5]) `shouldBe` Context 2 2 [0, 1] 2 [3, 4]
 
         describe "pushL" $ do
             it "should maintain the size of the left context." $
@@ -62,7 +62,7 @@ spec = do
                 property $ \(c :: Context Int) (xs :: [Int]) ->
                     length (_contextAfter $ foldl' pushL c xs) == _contextAfterN c
             it "should shift everything over one." $
-                (Context 2 2 [1, 2] 3 [4, 5] `pushL` 6) `shouldBe` (Context 2 2 [2, 3] 4 [5, 6])
+                (Context 2 2 [1, 2] 3 [4, 5] `pushL` 6) `shouldBe` Context 2 2 [2, 3] 4 [5, 6]
 
         describe "shiftL" $ do
             it "should shift to nothing on an empty context." $
@@ -112,6 +112,6 @@ spec = do
             it "should push lots of things into the list." $
                 getContext today `shouldBe` ["of", "my", "life", "."]
 
-        describe "getContext" $ do
+        describe "getContext" $
             it "should return the context as a list." $
                 getContext today `shouldBe` ["of", "my", "life", "."]

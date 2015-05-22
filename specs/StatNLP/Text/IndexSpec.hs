@@ -66,7 +66,7 @@ spec = do
             in  size i == 1 && toList i == [t]
         it "should add an item to an existing index." $ property $ \(t :: Text) (ts :: [Text]) ->
             let i      = insertItem t $ fromList ts
-                offset = if (t `elem` ts) then 0 else 1
+                offset = if t `elem` ts then 0 else 1
             in  size i == (offset + uniqueCount ts)
 
     describe "lookupItem" $ do
@@ -74,13 +74,13 @@ spec = do
             let i = fromList ts
             in  L.all (isJust . (`lookupItem` i)) ts
         it "should return nothing for items not in the list." $ property $ \(t :: Text) (ts :: [Text]) ->
-            let p = if (t `elem` ts) then isJust else isNothing
+            let p = if t `elem` ts then isJust else isNothing
             in  p . lookupItem t $ fromList ts
 
     describe "lookupIx" $ do
         it "should return the item for an index in the list." $ property $ \(NonEmpty (ts :: [Text])) ->
             let i = fromList ts
-            in  L.all (isJust . (`lookupIx` i)) ([0 .. (uniqueCount ts) - 1] :: [Int])
+            in  L.all (isJust . (`lookupIx` i)) ([0 .. uniqueCount ts - 1] :: [Int])
         it "should return Nothing for an index not in the list." $ property $ \(ts :: [Text]) ->
             isNothing . lookupIx (1 + L.length ts) $ fromList ts
 

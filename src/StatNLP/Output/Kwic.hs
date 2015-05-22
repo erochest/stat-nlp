@@ -21,6 +21,7 @@ import           Data.Char
 import           Data.Either
 import qualified Data.FingerTree        as FT
 import           Data.Foldable
+import           Data.Function          (on)
 import qualified Data.HashMap.Strict    as M
 import qualified Data.List              as L
 import           Data.Maybe
@@ -104,7 +105,7 @@ stepLine docId size empty s (lineNo, (line, tokens), hits) =
                            , (line, end) `pushLeft` empty
                            )
                 pending' = if isHit
-                               then (p:remaining)
+                               then p:remaining
                                else remaining
                 (current, remaining) =   fmap (overContext (pushLeft citem))
                                      <$> L.partition ((>size) . contextSize . frth) pending
@@ -159,7 +160,7 @@ updateLine :: Int -> Token LinePos PlainToken -> Token LinePos PlainToken
 updateLine n t = t & tokenPos . posLine .~ n
 
 sortGroup :: (Ord b, Eq b) => (a -> b) -> [a] -> [[a]]
-sortGroup on = L.groupBy (\a b -> on a == on b) . L.sortBy (comparing on)
+sortGroup f = L.groupBy ((==) `on` f) . L.sortBy (comparing f)
 
 overContext :: (KwicContext -> KwicContext) -> KwicPending -> KwicPending
 overContext f (a, b, c, d) = (a, b, c, f d)

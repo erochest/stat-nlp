@@ -27,7 +27,7 @@ spec = do
                 let step (i, prev) j = (j, prev && i < j)
                     tokens = tokenize input
                     cols   = map (_spanStart . _tokenPos) tokens
-                    (_, increasing) = foldl step ((-1), True) cols
+                    (_, increasing) = foldl step (-1, True) cols
                 in  increasing
         it "should tokenize a string based on the regex." $
             let input = "Now is the time for all good people to come to the\

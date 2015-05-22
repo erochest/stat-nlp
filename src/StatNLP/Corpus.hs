@@ -1,4 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
 
 
 module StatNLP.Corpus
@@ -31,7 +30,7 @@ import           StatNLP.Utils
 
 
 initCorpus :: Tokenizer (Token p PlainToken) -> DocumentReader b () -> Corpus b p
-initCorpus t r = Corpus M.empty t r
+initCorpus = Corpus M.empty
 
 makeCorpus :: Foldable t
            => Tokenizer (Token p PlainToken)

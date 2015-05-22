@@ -27,9 +27,9 @@ lineTokenizer re offset input =
         $ T.lines input
     where
         linePos line t@Token{_tokenPos} =
-            t & tokenPos .~ (Line (offset + line)
-                                  (_spanStart _tokenPos)
-                                  (_spanEnd _tokenPos))
+            t & tokenPos .~ Line (offset + line)
+                                 (_spanStart _tokenPos)
+                                 (_spanEnd _tokenPos)
 
 tokenize :: Tokenizer (Token LinePos PlainToken)
 tokenize = lineTokenizer (regex [UnicodeWord] "[\\p{L}\\p{M}]+") 0
@@ -45,7 +45,7 @@ normalize = fmap T.toLower
 
 cacheTokens :: (Eq n, Hashable n, Traversable t)
             => Cache n -> t (Token a n) -> (Cache n, t (Token a n))
-cacheTokens c ts = mapAccumL cacheToken c ts
+cacheTokens = mapAccumL cacheToken
     where
         cacheToken c t =
             let norm = _tokenNorm t

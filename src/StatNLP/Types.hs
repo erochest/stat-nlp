@@ -189,8 +189,8 @@ instance IsString (Token SpanPos PlainToken) where
 type instance Element (Token p t) = T.Text
 
 instance H.Hashable (Token p PlainToken) where
-    hashIO32 (Token pt _ _) salt = H.hashIO32 (encodeUtf8 pt) salt
-    hashIO64 (Token pt _ _) salt = H.hashIO64 (encodeUtf8 pt) salt
+    hashIO32 (Token pt _ _) = H.hashIO32 (encodeUtf8 pt)
+    hashIO64 (Token pt _ _) = H.hashIO64 (encodeUtf8 pt)
 
 data Corpus b p = Corpus
                 { _corpusDocuments :: !(M.HashMap T.Text (Document b ()))
