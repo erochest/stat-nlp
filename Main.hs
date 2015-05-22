@@ -95,18 +95,18 @@ main = do
 
     let InverseIndex index  = foldMap inverseIndexDocument docs
         targets             = L.sort $ maybe (M.keys index) return mtarget
-        flatten ((a, b), c) = (a, b, c)
+        flatten ((a, b), (c, d, e)) = (a, b, c, d, e)
+        third (_, _, x) = x
 
     forM_ targets $ \target -> do
-        mapM_ (F.print "{} {}\t{}\n")
-            . fmap (flatten . fmap getSum)
-            . L.sortBy (comparing (Down . snd))
+        mapM_ (F.print "{}\t{}\t{}\t{}\t{}\n")
+            . fmap flatten
+            . L.sortBy (comparing (third . snd))
             . M.toList
-            . unHash
-            . foldMap ( frequencies
-                      . uncurry (collocatePairsAround 0 3)
-                      . fmap (fmap _tokenNorm . _documentTokens)
-                      )
+            . collocateStats
+            . concatMap ( uncurry (collocatesAround 0 3)
+                        . fmap (fmap _tokenNorm . _documentTokens)
+                        )
             . mapMaybe (sequenceA . second (`M.lookup` docs) . swap)
             $ M.lookupDefault [] target index
 

@@ -7,21 +7,25 @@ module StatNLP.Text.Collocates
     , collocatePairs
     , collocatesAround
     , collocatePairsAround
+    , collocateStats
     ) where
 
 
-import           Control.Arrow    ((&&&))
-import           Control.Monad    (ap)
+import           Control.Arrow       ((&&&))
+import           Control.Monad       (ap)
 import           Data.Foldable
+import           Data.Hashable
+import qualified Data.HashMap.Strict as M
 import           Data.Maybe
-import           Data.Sequence    (ViewL (..), ViewR (..), (<|), (><), (|>))
-import qualified Data.Sequence    as S
+import           Data.Sequence       (ViewL (..), ViewR (..), (<|), (><), (|>))
+import qualified Data.Sequence       as S
 import           Data.Traversable
-import           Data.Tuple       (swap)
-import           Data.Vector      ((!?))
-import qualified Data.Vector      as V
+import           Data.Tuple          (swap)
+import           Data.Vector         ((!?))
+import qualified Data.Vector         as V
+import           Statistics.Sample
 
-import           StatNLP.Types    hiding (left)
+import           StatNLP.Types       hiding (left)
 
 
 data CollState a
@@ -42,6 +46,16 @@ instance Enum (CollState a) where
     enumFromTo x y       = map toEnum [csI x .. csI y]
     enumFromThenTo x y z = map toEnum [csI x, csI y .. csI z]
 
+
+-- | The values in the output @M.HashMap@ are the (N, mean, variance).
+collocateStats :: (Eq a, Hashable a, Foldable f)
+               => f (Collocate a) -> M.HashMap (a, a) (Int, Double, Double)
+collocateStats = fmap (stats . fmap fromIntegral . V.fromList . toList)
+               . unHash
+               . foldMap singleton
+    where
+        singleton (Collocate x y d) = MHash . M.singleton (x, y) $ S.singleton d
+        stats vs = (V.length vs, mean vs, variance vs)
 
 collocates :: (Foldable t, Traversable t)
            => Int -> Int -> t a -> [Collocate a]
