@@ -34,7 +34,7 @@ collocatesAround :: Int -> Int -> Int -> V.Vector a -> [(a, a)]
 collocatesAround before after center v =
     mapMaybe (((,) <$> (v !? center) <*>) . (v !?)) offsets
     where
-        offsets = filter (/=0) [(-before) .. after]
+        offsets = map (+center) $ filter (/=0) [(-before) .. after]
         mcenter = v !? center
 
 initState :: CollState a
