@@ -5,7 +5,9 @@
 module Main where
 
 
+import           Control.Arrow           ((&&&))
 import           Control.DeepSeq
+import           Control.Lens
 import           Control.Monad.Identity
 import           Data.Bifunctor
 import           Data.BloomFilter.Easy
@@ -27,8 +29,9 @@ import           Data.Text.Lazy          (toStrict)
 import           Data.Text.Lazy.Builder  (toLazyText)
 import           Data.Time
 import           Data.Traversable
+import           Data.Tuple
 import qualified Data.Vector             as V
-import           GHC.Exts
+import           GHC.Exts                hiding (toList)
 import           Taygeta.Tokenizer       (regexTokenizer)
 
 import           Debug.Trace
@@ -38,7 +41,7 @@ import           StatNLP.Document
 import           StatNLP.Output
 import           StatNLP.Output.Kwic
 import           StatNLP.Text.Collocates
-import           StatNLP.Text.Index
+import           StatNLP.Text.Index      hiding (toList)
 import           StatNLP.Text.Tokens
 import           StatNLP.Text.Utils
 import           StatNLP.Types
@@ -74,30 +77,40 @@ main = do
 
     F.print "Reading corpus from {}\n" $ F.Only corpusPath
     corpus <- loadCorpusDirectory tokenizer reader docToken corpusPath
-    let filterToken target Document{_documentTypes} =
+    let setTokenI i t = t & tokenPos .~ i
+        filterToken target Document{_documentTypes} =
             maybe True (token `BF.elem`) _documentTypes
             where
                 token = Token target Nothing . Line 0 0 $ T.length target
-        docs = L.sortBy (comparing _documentId)
-             . maybe id (filter . filterToken) mtarget
-             . M.elems
-             $ _corpusDocuments corpus
+    docs <- fmap ( M.fromList
+                 . fmap (   _documentId
+                        &&& fmap (V.fromList . zipWith (set tokenPos) ([0..] :: [Int]))
+                        ))
+         .  mapM (tokenizeDocument corpus)
+         .  maybe id (filter . filterToken) mtarget
+         .  M.elems
+         $  _corpusDocuments corpus
     F.print "Documents potentially containing '{}' : {} / {}\n"
             (fromMaybe "0" mtarget, L.length docs, M.size (_corpusDocuments corpus))
 
-    colls <-  M.toList . unHash . fold
-          <$> mapM ( fmap (frequencies . collocates 0 3 . fmap _tokenNorm . _documentTokens)
-                   . tokenizeDocument corpus) docs
+    let InverseIndex index  = foldMap inverseIndexDocument docs
+        targets             = L.sort $ maybe (M.keys index) return mtarget
+        flatten ((a, b), c) = (a, b, c)
 
-    let filterf a ((b, _), _) = a == b
-    mapM_ (F.print "{} {}\t{}\n")
-        . fmap (\((a, b), c) -> (a, b, c))
-        . take 25
-        . L.sortBy (comparing (Down . snd))
-        . fmap (fmap getSum)
-        $ maybe colls ((`filter` colls) . filterf) mtarget
+    forM_ targets $ \target -> do
+        mapM_ (F.print "{} {}\t{}\n")
+            . fmap (flatten . fmap getSum)
+            . L.sortBy (comparing (Down . snd))
+            . M.toList
+            . unHash
+            . foldMap ( frequencies
+                      . uncurry (collocatesAround 0 3)
+                      . fmap (fmap _tokenNorm . _documentTokens)
+                      )
+            . mapMaybe (sequenceA . second (`M.lookup` docs) . swap)
+            $ M.lookupDefault [] target index
 
-    putStrLn "done!"
+        putStrLn ""
 
 
 freqShowReport :: (Traversable t, Show a) => Int -> t a -> IO ()

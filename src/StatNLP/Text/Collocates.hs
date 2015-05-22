@@ -3,13 +3,16 @@
 
 module StatNLP.Text.Collocates
     ( collocates
+    , collocatesAround
     ) where
 
 
 import           Data.Foldable
+import           Data.Maybe
 import           Data.Sequence    (ViewL (..), ViewR (..), (<|), (><), (|>))
 import qualified Data.Sequence    as S
 import           Data.Traversable
+import           Data.Vector      ((!?))
 import qualified Data.Vector      as V
 
 import           StatNLP.Types    hiding (left)
@@ -26,6 +29,13 @@ collocates before after = toList
                         . uncurry (finis before)
                         . fmap fold
                         . mapAccumL (step before after) initState
+
+collocatesAround :: Int -> Int -> Int -> V.Vector a -> [(a, a)]
+collocatesAround before after center v =
+    mapMaybe (((,) <$> (v !? center) <*>) . (v !?)) offsets
+    where
+        offsets = filter (/=0) [(-before) .. after]
+        mcenter = v !? center
 
 initState :: CollState a
 initState = (S.empty, Nothing, S.empty)
