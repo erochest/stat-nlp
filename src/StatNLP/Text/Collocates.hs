@@ -1,63 +1,99 @@
-{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE TupleSections  #-}
 
 
 module StatNLP.Text.Collocates
     ( collocates
+    , collocatePairs
     , collocatesAround
+    , collocatePairsAround
     ) where
 
 
+import           Control.Arrow    ((&&&))
+import           Control.Monad    (ap)
 import           Data.Foldable
 import           Data.Maybe
 import           Data.Sequence    (ViewL (..), ViewR (..), (<|), (><), (|>))
 import qualified Data.Sequence    as S
 import           Data.Traversable
+import           Data.Tuple       (swap)
 import           Data.Vector      ((!?))
 import qualified Data.Vector      as V
 
 import           StatNLP.Types    hiding (left)
 
 
-type CollState a = (S.Seq a, Maybe a, S.Seq a)
+data CollState a
+        = CS
+        { csBefore :: !(S.Seq (a, Int))
+        , csCenter :: !(Maybe (a, Int))
+        , csAfter  :: !(S.Seq (a, Int))
+        , csI      :: !Int
+        }
+
+instance Enum (CollState a) where
+    succ cs@CS{csI} = cs { csI = succ csI }
+    pred cs@CS{csI} = cs { csI = pred csI }
+    toEnum   = CS S.empty Nothing S.empty
+    fromEnum = csI
+    enumFrom x           = map toEnum [csI x ..]
+    enumFromThen x y     = map toEnum [csI x, csI y .. ]
+    enumFromTo x y       = map toEnum [csI x .. csI y]
+    enumFromThenTo x y z = map toEnum [csI x, csI y .. csI z]
 
 
--- TODO: Try using StatNLP.Types.Context instead of CollState.
--- TODO: Need to load criterion and optimize this.
 collocates :: (Foldable t, Traversable t)
-           => Int -> Int -> t a -> [(a, a)]
+           => Int -> Int -> t a -> [Collocate a]
 collocates before after = toList
                         . uncurry (finis before)
                         . fmap fold
                         . mapAccumL (step before after) initState
 
-collocatesAround :: Int -> Int -> Int -> V.Vector a -> [(a, a)]
+collocatePairs :: (Foldable t, Traversable t)
+               => Int -> Int -> t a -> [(a, a)]
+collocatePairs before after = fmap toPair . collocates before after
+
+collocatesAround :: Int -> Int -> Int -> V.Vector a -> [Collocate a]
 collocatesAround before after center v =
-    mapMaybe (((,) <$> (v !? center) <*>) . (v !?)) offsets
+    mapMaybe ( ap (fmap uncurry (fmap Collocate mcenter))
+             . fmap swap
+             . sequenceA
+             . fmap (v !?)
+             )
+        . map (id &&& (+center))
+        $ filter (/=0) [(-before) .. after]
     where
-        offsets = map (+center) $ filter (/=0) [(-before) .. after]
         mcenter = v !? center
 
+collocatePairsAround :: Int -> Int -> Int -> V.Vector a -> [(a, a)]
+collocatePairsAround before after center =
+    fmap toPair . collocatesAround before after center
+
+toPair :: Collocate a -> (a, a)
+toPair (Collocate a b _) = (a, b)
+
 initState :: CollState a
-initState = (S.empty, Nothing, S.empty)
+initState = CS S.empty Nothing S.empty 0
 
-left :: S.Seq a -> S.Seq a -> S.Seq a -> CollState a
-left empty nonEmpty seq =
+left :: S.Seq (a, Int) -> S.Seq (a, Int) -> S.Seq (a, Int) -> Int -> CollState a
+left empty nonEmpty seq n =
     case S.viewl seq of
-        EmptyL  -> (empty, Nothing, S.empty)
-        x :< xs -> (nonEmpty, Just x, xs)
+        EmptyL  -> (CS empty    Nothing  S.empty n)
+        x :< xs -> (CS nonEmpty (Just x) xs      n)
 
-step :: Int -> Int -> CollState a -> a -> (CollState a, S.Seq (a, a))
-step before after s a = let next = shift before after s a
-                        in  (next, pairs next)
+step :: Int -> Int -> CollState a -> a -> (CollState a, S.Seq (Collocate a))
+step before after s a = let next = shift before after s (a, csI s)
+                        in  (succ next, pairs next)
 
-shift :: Int -> Int -> CollState a -> a -> CollState a
-shift before after (as, current, zs) a
-    | S.length zs < after = (as, current, zs |> a)
-    | otherwise           = left as (trim before (maybe as (as |>) current)) (zs |> a)
+shift :: Int -> Int -> CollState a -> (a, Int) -> CollState a
+shift before after cs@(CS as current zs n) a
+    | S.length zs < after = cs { csAfter = zs |> a }
+    | otherwise           = left as (trim before (maybe as (as |>) current)) (zs |> a) n
 
 shift' :: Int -> CollState a -> CollState a
-shift' _      (as, Nothing, zs) = left as as zs
-shift' before (as, Just c,  zs) = left as' as' zs
+shift' _      (CS as Nothing  zs n) = left as  as  zs n
+shift' before (CS as (Just c) zs n) = left as' as' zs n
     where as' = trim before (as |> c)
 
 trim :: Int -> S.Seq a -> S.Seq a
@@ -66,14 +102,16 @@ trim n ss | S.length ss > n = case S.viewl ss of
                                   (_ :< ss') -> ss'
           | otherwise       = ss
 
-pairs :: CollState a -> S.Seq (a, a)
-pairs (as, Just c, zs) = fmap (c,) $ as >< zs
-pairs (_, Nothing, _)  = S.empty
+pairs :: CollState a -> S.Seq (Collocate a)
+pairs (CS _ Nothing _ _)    = S.empty
+pairs (CS as (Just c) zs _) = fmap (coll c) $ as >< zs
+    where
+        coll (c, i) (d, j) = Collocate c d (j - i)
 
-finis :: Int -> CollState a -> S.Seq (a, a) -> S.Seq (a, a)
+finis :: Int -> CollState a -> S.Seq (Collocate a) -> S.Seq (Collocate a)
 finis before s xs = xs >< finis' before (shift' before s)
 
-finis' :: Int -> CollState a -> S.Seq (a, a)
-finis' before s@(_, Nothing, zs) | S.null zs = S.empty
-                                 | otherwise = finis' before (shift' before s)
+finis' :: Int -> CollState a -> S.Seq (Collocate a)
+finis' before s@(CS _ Nothing zs _) | S.null zs = S.empty
+                                    | otherwise = finis' before (shift' before s)
 finis' before s = pairs s >< finis' before (shift' before s)

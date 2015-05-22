@@ -104,7 +104,7 @@ main = do
             . M.toList
             . unHash
             . foldMap ( frequencies
-                      . uncurry (collocatesAround 0 3)
+                      . uncurry (collocatePairsAround 0 3)
                       . fmap (fmap _tokenNorm . _documentTokens)
                       )
             . mapMaybe (sequenceA . second (`M.lookup` docs) . swap)

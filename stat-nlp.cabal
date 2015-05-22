@@ -108,6 +108,7 @@ test-suite stat-nlp-specs
                        , text
                        , text-icu
                        , unordered-containers
+                       , vector
   default-language:    Haskell2010
 
 

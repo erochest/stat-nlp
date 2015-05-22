@@ -74,6 +74,11 @@ module StatNLP.Types
     , kwicPrefix
     , kwicTarget
     , kwicSuffix
+
+    , Collocate(..)
+    , colHead
+    , colPair
+    , colDist
     ) where
 
 
@@ -247,3 +252,10 @@ data Kwic p = Kwic
             , _kwicSuffix :: !T.Text
             } deriving (Show, Eq, Functor)
 makeLenses ''Kwic
+
+data Collocate a = Collocate
+                 { _colHead :: !a
+                 , _colPair :: !a
+                 , _colDist :: !Int
+                 } deriving (Show, Eq, Ord, Functor)
+makeLenses ''Collocate
