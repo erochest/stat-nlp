@@ -60,6 +60,7 @@ library
 executable stat-nlp
   main-is:             Main.hs
   other-modules:       Opts
+  ghc-options:         -threaded -rtsopts
   -- other-extensions:    
   build-depends:       base >=4.8 && <5
                      , stat-nlp
