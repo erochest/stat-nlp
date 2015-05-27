@@ -52,7 +52,7 @@ updateDocumentFilters c = fmap (flip (set corpusDocuments) c . M.fromList)
 
 loadCorpusDirectory :: Tokenizer (Token p PlainToken)
                     -> DocumentReader b ()
-                    -> (Document b () -> IO (Document b ()))
+                    -> DocumentTransformer b ()
                     -> FilePath
                     -> IO (Corpus b p)
 loadCorpusDirectory tokenizer reader transform root =

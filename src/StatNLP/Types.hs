@@ -55,6 +55,7 @@ module StatNLP.Types
     , tokenPos
 
     , DocumentReader
+    , DocumentTransformer
 
     , Context(..)
     , contextBeforeN
@@ -128,6 +129,8 @@ makeLenses ''Document
 instance (NFData b, NFData ts) => NFData (Document b ts)
 
 type DocumentReader b ts = Document b ts -> IO T.Text
+
+type DocumentTransformer b ts = Document b ts -> IO (Document b ts)
 
 data IxIndex a = IxIndex
                { _indexItems :: !(M.HashMap a Int)

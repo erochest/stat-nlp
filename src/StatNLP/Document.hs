@@ -9,6 +9,7 @@ module StatNLP.Document where
 import           Control.Lens
 import           Control.Monad
 import           Data.BloomFilter.Easy
+import qualified Data.BloomFilter.Easy as BF
 import qualified Data.BloomFilter.Hash as H
 import           Data.Either
 import           Data.Foldable         (toList)
@@ -77,3 +78,6 @@ indexDocumentTokens i d = fmap (setDocumentTokens d _tokenNorm)
 readIndexDocumentTokens :: Corpus b p -> IxIndex PlainToken -> Document b ()
                         -> IO (IxIndex PlainToken, Document Int [Token p Int])
 readIndexDocumentTokens c i d = indexDocumentTokens i <$> tokenizeDocument c d
+
+documentContains :: t -> Document t ts -> Bool
+documentContains token = maybe True (token `BF.elem`) . _documentTypes
