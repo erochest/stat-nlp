@@ -2,11 +2,11 @@
 SRC=$(shell find src -name '*.hs')
 
 CABAL=cabal
-# FLAGS=--enable-tests --enable-library-profiling --enable-executable-profiling
-# RUN_FLAGS=-with-rtsopts=-N -p -s -h -i0.1
+FLAGS=--enable-tests --enable-library-profiling --enable-executable-profiling
+RUN_FLAGS=+RTS -with-rtsopts=-N -p -s -h -i0.1
 
-FLAGS=--enable-tests
-RUN_FLAGS=
+# FLAGS=--enable-tests
+# RUN_FLAGS=
 
 all: init test docs package
 
