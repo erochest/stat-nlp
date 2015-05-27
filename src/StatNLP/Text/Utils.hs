@@ -9,6 +9,7 @@ import qualified Data.HashMap.Strict as M
 import qualified Data.List           as L
 import           Data.Monoid
 import           Data.Traversable
+import qualified Data.Vector         as V
 
 import           StatNLP.Types
 
@@ -25,3 +26,6 @@ tokenTypeRatio (MHash fm) = fromIntegral (getSum . sum $ M.elems fm)
 
 ngrams :: Int -> [a] -> [[a]]
 ngrams n = filter ((== n) . length) . map (take n) . L.tails
+
+ngramsV :: Int -> V.Vector a -> [V.Vector a]
+ngramsV n vs = map (\i -> V.slice i n vs) [0..(V.length vs - n - 1)]
