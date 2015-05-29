@@ -34,6 +34,9 @@ module StatNLP.Types
     , PlainToken
     , DocumentPos
     , DocumentLine
+    , StopWords
+    , VectorDoc
+    , LineToken
 
     , SpanPos(..)
     , spanStart
@@ -204,6 +207,9 @@ makeLenses ''Corpus
 
 type DocumentPos p = (DocumentId, p)
 type DocumentLine  = DocumentPos LinePos
+type StopWords     = S.HashSet PlainToken
+type VectorDoc b   = Document b (V.Vector (Token Int PlainToken))
+type LineToken     = Token LinePos PlainToken
 
 data Context a = Context
                { _contextBeforeN :: !Int

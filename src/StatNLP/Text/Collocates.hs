@@ -8,11 +8,17 @@ module StatNLP.Text.Collocates
     , collocatesAround
     , collocatePairsAround
     , collocateStats
+    , collocateStatsC
+    , collocateStatsCFin
+    , getCollocates
+    , getCollocatesC
     ) where
 
 
+import           Conduit
 import           Control.Arrow       ((&&&))
 import           Control.Monad       (ap)
+import           Data.Bifunctor
 import           Data.Foldable
 import           Data.Hashable
 import qualified Data.HashMap.Strict as M
@@ -57,6 +63,33 @@ collocateStats = fmap (stats . fmap fromIntegral . V.fromList . toList)
         singleton (Collocate x y d) = MHash . M.singleton (x, y) $ S.singleton d
         stats vs = (V.length vs, mean vs, variance vs)
 
+-- | The values in the output @M.HashMap@ are the (N, mean, variance).
+collocateStatsC :: (Eq a, Hashable a, Monad m)
+                => Consumer (Collocate a) m (M.HashMap (a, a) (Int, Double, Double))
+collocateStatsC = foldlC step M.empty
+    where
+        step :: (Eq a, Hashable a)
+             => M.HashMap (a, a) (Int, Double, Double) -> Collocate a
+             -> M.HashMap (a, a) (Int, Double, Double)
+        step hm (Collocate a b x) = M.insert k (n', x_', m') hm
+            where
+                k          = (a, b)
+                (n, x_, m) = M.lookupDefault (0, 0.0, 0.0) k hm
+                x'         = fromIntegral x
+                n'         = succ n
+                n''        = fromIntegral n'
+                d          = x' - x_
+                x_'        = x_ + d / n''
+                m'         = m + d * (x' - x_')
+
+collocateStatsCFin :: M.HashMap (a, a) (Int, Double, Double)
+                   -> M.HashMap (a, a) (Int, Double, Double)
+collocateStatsCFin = fmap finis
+    where
+        finis (n, x', m)
+            | n < 2     = (n, 0.0, 0.0)
+            | otherwise = (n, x', m / (fromIntegral n - 1.0))
+
 collocates :: (Foldable t, Traversable t)
            => Int -> Int -> t a -> [Collocate a]
 collocates before after = toList
@@ -70,15 +103,14 @@ collocatePairs before after = fmap toPair . collocates before after
 
 collocatesAround :: Int -> Int -> Int -> V.Vector a -> [Collocate a]
 collocatesAround before after center v =
-    mapMaybe ( ap (fmap (uncurry . Collocate) mcenter)
-             . fmap swap
+    mapMaybe ( ap (fmap collocate mcenter)
              . sequenceA
-             . fmap (v !?)
-             . (id &&& (+center))
+             . (id &&& ((v !?) . (+center)))
              )
         $ filter (/=0) [(-before) .. after]
     where
         mcenter = v !? center
+        collocate h (d, p) = Collocate h p d
 
 collocatePairsAround :: Int -> Int -> Int -> V.Vector a -> [(a, a)]
 collocatePairsAround before after center =
@@ -129,3 +161,13 @@ finis' :: Int -> CollState a -> S.Seq (Collocate a)
 finis' before s@(CS _ Nothing zs _) | S.null zs = S.empty
                                     | otherwise = finis' before (shift' before s)
 finis' before s = pairs s >< finis' before (shift' before s)
+
+getCollocates :: [(Int, VectorDoc b)] -> [Collocate PlainToken]
+getCollocates =
+    concatMap ( uncurry (collocatesAround 0 3)
+              . fmap (fmap _tokenNorm . _documentTokens)
+              )
+
+getCollocatesC :: Monad m => Conduit (Int, VectorDoc b) m (Collocate PlainToken)
+getCollocatesC =   mapC (second (fmap _tokenNorm . _documentTokens))
+               =$= concatMapC (uncurry (collocatesAround 0 3))

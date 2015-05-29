@@ -16,10 +16,12 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 library
-  exposed-modules:     StatNLP.Output
-                     , StatNLP.Context
+  exposed-modules:     StatNLP.Context
                      , StatNLP.Corpus
                      , StatNLP.Document
+                     , StatNLP.Index
+                     , StatNLP.Input
+                     , StatNLP.Output
                      , StatNLP.Output.Kwic
                      , StatNLP.Statistics
                      , StatNLP.Text.Collocates
@@ -33,6 +35,7 @@ library
   build-depends:       base >=4.8 && <5
                      , bifunctors
                      , bloomfilter
+                     , bytestring
                      , comonad
                      , conduit
                      , conduit-combinators
@@ -51,16 +54,19 @@ library
                      , text
                      , text-format
                      , text-icu
+                     , time
                      , unordered-containers
                      , vector
                      , vector-algorithms
   hs-source-dirs:      src
   default-language:    Haskell2010
+  ghc-options:         -O2
+                       -threaded
+  ghc-prof-options:    -fprof-auto
 
 executable stat-nlp
   main-is:             Main.hs
   other-modules:       Opts
-  ghc-options:         -threaded -rtsopts
   -- other-extensions:    
   build-depends:       base >=4.8 && <5
                      , stat-nlp
@@ -85,7 +91,9 @@ executable stat-nlp
   default-language:    Haskell2010
   ghc-options:         -O2
                        -threaded
-                       -fprof-auto
+                       "-with-rtsopts=-N"
+  ghc-prof-options:    -fprof-auto
+                       "-with-rtsopts=-p -s -h -i0.1"
 
 test-suite stat-nlp-specs
   type:                exitcode-stdio-1.0

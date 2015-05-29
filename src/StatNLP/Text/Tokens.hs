@@ -8,12 +8,14 @@ module StatNLP.Text.Tokens where
 import           Control.Lens
 import           Data.Hashable
 import qualified Data.HashMap.Strict  as M
+import qualified Data.HashSet         as S
 import           Data.Maybe
 import           Data.MonoTraversable
 import qualified Data.Text            as T
-import           Data.Text.ICU
+import           Data.Text.ICU        hiding (normalize)
 import           Data.Traversable
 
+import           StatNLP.Document
 import           StatNLP.Types
 
 
@@ -52,3 +54,17 @@ cacheTokens = mapAccumL cacheToken
             in  case M.lookup norm c of
                     Nothing    -> (M.insert norm norm c, t)
                     Just norm' -> (c, t & tokenNorm .~ norm')
+
+tokenizer :: Tokenizer LineToken
+tokenizer = fmap normalize . tokenize
+
+tokenizerStop :: StopWords -> Tokenizer LineToken
+tokenizerStop stopwords = filter (not . (`S.member` stopwords) . _tokenNorm)
+                        . tokenizer
+
+filterToken :: PlainToken -> Document LineToken ts -> Bool
+filterToken norm =
+    documentContains (Token norm Nothing . Line 0 0 $ T.length norm)
+
+posTokenIndex :: [Token p t] -> [Token Int t]
+posTokenIndex = zipWith (set tokenPos) [0..]

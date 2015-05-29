@@ -1,4 +1,5 @@
 {-# LANGUAGE NamedFieldPuns  #-}
+{-# LANGUAGE RankNTypes      #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections   #-}
 
@@ -6,21 +7,26 @@
 module StatNLP.Document where
 
 
+import           Conduit
 import           Control.Lens
 import           Control.Monad
+import           Data.Bifunctor
 import           Data.BloomFilter.Easy
 import qualified Data.BloomFilter.Easy as BF
 import qualified Data.BloomFilter.Hash as H
+import           Data.Conduit.List     (sourceList)
 import           Data.Either
 import           Data.Foldable         (toList)
 import           Data.Hashable
+import qualified Data.HashMap.Strict   as M
 import qualified Data.HashSet          as S
+import           Data.Maybe
 import qualified Data.Text             as T
 import           Data.Text.ICU
 import           Data.Traversable
+import           Data.Tuple
 
 import           StatNLP.Text.Index    hiding (toList)
-import           StatNLP.Text.Tokens
 import           StatNLP.Types
 
 
@@ -81,3 +87,19 @@ readIndexDocumentTokens c i d = indexDocumentTokens i <$> tokenizeDocument c d
 
 documentContains :: t -> Document t ts -> Bool
 documentContains token = maybe True (token `BF.elem`) . _documentTypes
+
+getDocs :: M.HashMap PlainToken [(DocumentId, Int)]
+        -> M.HashMap DocumentId (VectorDoc b)
+        -> T.Text
+        -> [(Int, VectorDoc b)]
+getDocs index docs target =
+      mapMaybe (sequenceA . second (`M.lookup` docs) . swap)
+    $ M.lookupDefault [] target index
+
+getDocsC :: Monad m
+         => M.HashMap PlainToken [(DocumentId, Int)]
+         -> M.HashMap DocumentId (VectorDoc b)
+         -> T.Text
+         -> Producer m (Int, VectorDoc b)
+getDocsC index docs target =   sourceList (M.lookupDefault [] target index)
+                           =$= concatMapC (sequenceA . second (`M.lookup` docs) . swap)

@@ -9,6 +9,8 @@ module StatNLP.Corpus
     , indexCorpus
     , indexCorpus'
     , inverseIndexCorpus
+    , readCorpusVectors
+    , transformer
     ) where
 
 
@@ -20,9 +22,11 @@ import           Data.Monoid
 import qualified Data.Text           as T
 import           Data.Text.ICU
 import           Data.Traversable
+import qualified Data.Vector         as V
 import           System.Directory
 
 import           StatNLP.Document
+import           StatNLP.Input
 import qualified StatNLP.Text.Index  as I
 import           StatNLP.Text.Tokens
 import           StatNLP.Types
@@ -81,3 +85,18 @@ inverseIndexCorpus c = fmap mconcat
                      . mapM (readInverseIndexDocument c)
                      . M.elems
                      $ _corpusDocuments c
+
+readCorpusVectors :: Maybe PlainToken -> Corpus LineToken LinePos
+                  -> IO (M.HashMap DocumentId (VectorDoc LineToken))
+readCorpusVectors mtarget corpus =
+      fmap ( M.fromList
+           . fmap (_documentId &&& fmap (V.fromList . posTokenIndex))
+           )
+    . mapM (tokenizeDocument corpus)
+    . maybe id (filter . filterToken) mtarget
+    . M.elems
+    $ _corpusDocuments corpus
+
+transformer :: StopWords -> DocumentTransformer LineToken ()
+transformer stopwords =
+    readDocumentTypes' (fmap (tokenizerStop stopwords) . reader)
