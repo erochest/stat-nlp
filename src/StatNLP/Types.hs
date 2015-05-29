@@ -83,6 +83,11 @@ module StatNLP.Types
     , colHead
     , colPair
     , colDist
+
+    , SummaryStats(..)
+    , summaryN
+    , summaryMean
+    , summaryVariance
     ) where
 
 
@@ -268,3 +273,10 @@ data Collocate a = Collocate
                  , _colDist :: !Int
                  } deriving (Show, Eq, Ord, Functor)
 makeLenses ''Collocate
+
+data SummaryStats = SummaryStats
+                  { _summaryN        :: !Int
+                  , _summaryMean     :: !Double
+                  , _summaryVariance :: !Double
+                  } deriving (Show, Eq)
+makeLenses ''SummaryStats

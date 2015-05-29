@@ -3,7 +3,8 @@
 
 
 module StatNLP.Text.Collocates
-    ( collocates
+    ( OnlineSummaryState
+    , collocates
     , collocatePairs
     , collocatesAround
     , collocatePairsAround
@@ -23,6 +24,7 @@ import           Data.Foldable
 import           Data.Hashable
 import qualified Data.HashMap.Strict as M
 import           Data.Maybe
+import           Data.Monoid
 import           Data.Sequence       (ViewL (..), ViewR (..), (<|), (><), (|>))
 import qualified Data.Sequence       as S
 import           Data.Traversable
@@ -32,6 +34,24 @@ import qualified Data.Vector         as V
 import           Statistics.Sample
 
 import           StatNLP.Types       hiding (left)
+
+
+data OnlineSummaryState = OSS
+                        { ossN    :: !Int
+                        , ossMean :: !Double
+                        , ossM2   :: !Double
+                        }
+
+instance Monoid OnlineSummaryState where
+    mempty = OSS 0 0.0 0.0
+    mappend (OSS na xa m2a) (OSS nb xb m2b) =
+        OSS n (xa + theta * nb' / n') (m2a + m2b + theta^2 * (na' * nb') / n')
+        where
+            n     = na + nb
+            na'   = fromIntegral na
+            nb'   = fromIntegral nb
+            n'    = fromIntegral n
+            theta = xb - xa
 
 
 data CollState a
@@ -65,16 +85,16 @@ collocateStats = fmap (stats . fmap fromIntegral . V.fromList . toList)
 
 -- | The values in the output @M.HashMap@ are the (N, mean, variance).
 collocateStatsC :: (Eq a, Hashable a, Monad m)
-                => Consumer (Collocate a) m (M.HashMap (a, a) (Int, Double, Double))
-collocateStatsC = foldlC step M.empty
+                => Consumer (Collocate a) m (M.HashMap (a, a) OnlineSummaryState)
+collocateStatsC = foldlC step mempty
     where
         step :: (Eq a, Hashable a)
-             => M.HashMap (a, a) (Int, Double, Double) -> Collocate a
-             -> M.HashMap (a, a) (Int, Double, Double)
-        step hm (Collocate a b x) = M.insert k (n', x_', m') hm
+             => M.HashMap (a, a) OnlineSummaryState -> Collocate a
+             -> M.HashMap (a, a) OnlineSummaryState
+        step hm (Collocate a b x) = M.insert k (OSS n' x_' m') hm
             where
                 k          = (a, b)
-                (n, x_, m) = M.lookupDefault (0, 0.0, 0.0) k hm
+                OSS n x_ m = fold $ M.lookup k hm
                 x'         = fromIntegral x
                 n'         = succ n
                 n''        = fromIntegral n'
@@ -82,13 +102,13 @@ collocateStatsC = foldlC step M.empty
                 x_'        = x_ + d / n''
                 m'         = m + d * (x' - x_')
 
-collocateStatsCFin :: M.HashMap (a, a) (Int, Double, Double)
-                   -> M.HashMap (a, a) (Int, Double, Double)
+collocateStatsCFin :: M.HashMap (a, a) OnlineSummaryState
+                   -> M.HashMap (a, a) (Maybe SummaryStats)
 collocateStatsCFin = fmap finis
     where
-        finis (n, x', m)
-            | n < 2     = (n, 0.0, 0.0)
-            | otherwise = (n, x', m / (fromIntegral n - 1.0))
+        finis (OSS n x' m)
+            | n < 2     = Nothing
+            | otherwise = Just . SummaryStats n x' $ m / (fromIntegral n - 1.0)
 
 collocates :: (Foldable t, Traversable t)
            => Int -> Int -> t a -> [Collocate a]

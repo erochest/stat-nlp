@@ -8,6 +8,7 @@ import           Conduit
 import           Control.Lens
 import qualified Data.HashMap.Strict     as M
 import qualified Data.List               as L
+import           Data.Maybe
 import           Data.Monoid
 import           Data.Ord
 import qualified Data.Text               as T
@@ -29,8 +30,8 @@ freqReport n = mapM_ (F.print "{}\t{}\n")
              . M.toList
              . unHash
 
-flatten :: ((a, b), (c, d, e)) -> (a, b, c, d, e)
-flatten ((a, b), (c, d, e)) = (a, b, c, d, e)
+flatten :: ((a, b), SummaryStats) -> (a, b, Int, Double, Double)
+flatten ((a, b), (SummaryStats c d e)) = (a, b, c, d, e)
 
 printColls :: M.HashMap PlainToken [(DocumentId, Int)]
            -> M.HashMap DocumentId (VectorDoc b)
@@ -44,9 +45,10 @@ printColls index docs target = do
     mapM_ (F.print "{}\t{}\t{}\t{}\t{}\n")
         $ prepCollocates stats
 
-prepCollocates :: M.HashMap (a, a) (Int, Double, Double) -> [(a, a, Int, Double, Double)]
+prepCollocates :: M.HashMap (a, a) (Maybe SummaryStats) -> [(a, a, Int, Double, Double)]
 prepCollocates = fmap flatten
-               . L.sortBy (comparing (^. _2 . _3))
+               . L.sortBy (comparing (^. _2 . summaryVariance))
+               . mapMaybe sequenceA
                . M.toList
 
 freqShowReport :: (Traversable t, Show a) => Int -> t a -> IO ()
