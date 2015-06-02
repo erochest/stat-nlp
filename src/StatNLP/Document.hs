@@ -69,7 +69,8 @@ readInverseIndexDocument :: Corpus b p -> Document b ()
                          -> IO (InverseIndex PlainToken (DocumentPos p))
 readInverseIndexDocument c d = inverseIndexDocument <$> tokenizeDocument c d
 
-tokenizeDocument :: Corpus b p -> Document b () -> IO (Document (Token p PlainToken) [Token p PlainToken])
+tokenizeDocument :: Corpus b p -> Document b ()
+                 -> IO (Document (Token p PlainToken) [Token p PlainToken])
 tokenizeDocument Corpus{..} d =
     setDocumentTokens d id . _corpusTokenizer <$> _corpusReader d
 

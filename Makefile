@@ -2,11 +2,12 @@
 SRC=$(shell find src -name '*.hs')
 
 CABAL=cabal
-# FLAGS=--enable-tests --enable-library-profiling --enable-executable-profiling
-# RUN_FLAGS=+RTS -N -p -s -h -i0.1
+FLAGS=--enable-tests --enable-library-profiling --enable-executable-profiling
 
-FLAGS=--enable-tests
+# FLAGS=--enable-tests
 RUN_FLAGS=
+# CORPUS=corpora/gutenberg
+CORPUS=corpora/gutenberg/melville-moby_dick.txt
 
 all: init test docs package
 
@@ -22,7 +23,7 @@ specs: build
 	./dist/build/stat-nlp-specs/stat-nlp-specs
 
 run:
-	${CABAL} run corpora/gutenberg/ whale $(RUN_FLAGS)
+	${CABAL} run $(CORPUS) whale $(RUN_FLAGS)
 
 
 # docs:

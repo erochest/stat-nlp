@@ -23,6 +23,7 @@ library
                      , StatNLP.Input
                      , StatNLP.Output
                      , StatNLP.Output.Kwic
+                     , StatNLP.Parallel
                      , StatNLP.Statistics
                      , StatNLP.Text.Collocates
                      , StatNLP.Text.Index
@@ -33,6 +34,7 @@ library
   -- other-modules:       
   -- other-extensions:    
   build-depends:       base >=4.8 && <5
+                     , abstract-par
                      , bifunctors
                      , bloomfilter
                      , bytestring
@@ -49,12 +51,17 @@ library
                      , lens
                      , linear
                      , mono-traversable
+                     , monad-par
+                     , monad-par-extras
+                     , mtl
+                     , split
                      , statistics
                      , taygeta
                      , text
                      , text-format
                      , text-icu
                      , time
+                     , transformers
                      , unordered-containers
                      , vector
                      , vector-algorithms
@@ -91,7 +98,7 @@ executable stat-nlp
   default-language:    Haskell2010
   ghc-options:         -O2
                        -threaded
-                       "-with-rtsopts=-N"
+                       "-with-rtsopts=-N -s"
   ghc-prof-options:    -fprof-auto
                        "-with-rtsopts=-p -s -h -i0.1"
 

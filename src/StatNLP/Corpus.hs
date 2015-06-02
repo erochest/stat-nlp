@@ -27,6 +27,7 @@ import           System.Directory
 
 import           StatNLP.Document
 import           StatNLP.Input
+import           StatNLP.Parallel
 import qualified StatNLP.Text.Index  as I
 import           StatNLP.Text.Tokens
 import           StatNLP.Types
