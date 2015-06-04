@@ -131,7 +131,7 @@ data Document b ts = Document
                    , _documentTags   :: !(S.HashSet Tag)
                    , _documentTypes  :: !(Maybe (Bloom b))
                    , _documentTokens :: !ts
-                   } deriving (Generic, Functor, Foldable, Traversable)
+                   } deriving (Show, Generic, Functor, Foldable, Traversable)
 makeLenses ''Document
 
 instance (NFData b, NFData ts) => NFData (Document b ts)

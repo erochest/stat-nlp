@@ -70,23 +70,6 @@ collocateStats = fmap (stats . fmap fromIntegral . V.fromList . toList)
 collocateStatsC :: (Eq a, Hashable a, Monad m)
                 => Consumer (Collocate a) m (M.HashMap (a, a) OnlineSummaryState)
 collocateStatsC = summaryStatsByC (_colHead &&& _colPair) (fromIntegral . _colDist)
-        -- foldlC step mempty
-    {-
-     - where
-     -     step :: (Eq a, Hashable a)
-     -          => M.HashMap (a, a) OnlineSummaryState -> Collocate a
-     -          -> M.HashMap (a, a) OnlineSummaryState
-     -     step hm (Collocate a b x) = M.insert k (OSS n' x_' m') hm
-     -         where
-     -             k          = (a, b)
-     -             OSS n x_ m = fold $ M.lookup k hm
-     -             x'         = fromIntegral x
-     -             n'         = succ n
-     -             n''        = fromIntegral n'
-     -             d          = x' - x_
-     -             x_'        = x_ + d / n''
-     -             m'         = m + d * (x' - x_')
-     -}
 
 collocateStatsCFin :: M.HashMap (a, a) OnlineSummaryState
                    -> M.HashMap (a, a) (Maybe SummaryStats)
@@ -170,6 +153,17 @@ getCollocates =
               . fmap (fmap _tokenNorm . _documentTokens)
               )
 
-getCollocatesC :: Monad m => Conduit (Int, VectorDoc b) m (Collocate PlainToken)
-getCollocatesC =   mapC (second (fmap _tokenNorm . _documentTokens))
-               =$= concatMapC (uncurry (collocatesAround 0 3))
+getCollocatesC :: Monad m
+               => Int -> Int -> Conduit (Int, VectorDoc b) m (Collocate PlainToken)
+getCollocatesC pre post = loop
+    where
+        loop :: Monad m => Conduit (Int, VectorDoc b) m (Collocate PlainToken)
+        loop = do
+            pair <- await
+            case pair of
+                Just (tokenIndex, doc) -> do
+                    yieldMany . collocatesAround pre post tokenIndex
+                              . fmap _tokenNorm
+                              $ _documentTokens doc
+                    loop
+                Nothing -> return ()

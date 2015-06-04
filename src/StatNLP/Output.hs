@@ -40,7 +40,7 @@ printColls :: M.HashMap PlainToken [(DocumentId, Int)]
 printColls index docs target = do
     stats <- fmap collocateStatsCFin
           .  runResourceT $  getDocsC index docs target
-                          =$ getCollocatesC
+                          =$ getCollocatesC 0 3
                           $$ collocateStatsC
     mapM_ (F.print "{}\t{}\t{}\t{}\t{}\n")
         $ prepCollocates stats

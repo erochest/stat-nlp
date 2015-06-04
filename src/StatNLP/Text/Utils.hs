@@ -3,6 +3,7 @@
 module StatNLP.Text.Utils where
 
 
+import Conduit
 import           Data.Foldable
 import           Data.Hashable
 import qualified Data.HashMap.Strict as M
@@ -29,3 +30,5 @@ ngrams n = filter ((== n) . length) . map (take n) . L.tails
 
 ngramsV :: Int -> V.Vector a -> [V.Vector a]
 ngramsV n vs = map (\i -> V.slice i n vs) [0..(V.length vs - n - 1)]
+
+ngramsC :: Int -> Conduit
