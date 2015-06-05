@@ -42,7 +42,7 @@ run:
 # prep and push
 
 tags: ${SRC}
-	hasktags --ctags *.hs src
+	codex update
 
 hlint:
 	hlint *.hs src specs
@@ -50,6 +50,7 @@ hlint:
 clean:
 	${CABAL} clean
 	-rm -rf *.hp *.prof *.ps *.aux
+	codex cache clean
 
 distclean: clean
 	${CABAL} sandbox delete
@@ -74,4 +75,4 @@ restart: distclean init build
 
 rebuild: clean configure build
 
-.PHONY: all init test run clean distclean configure deps build rebuild hlint watch
+.PHONY: all init test run clean distclean configure deps build rebuild hlint watch tags
