@@ -12,11 +12,11 @@ import           Control.Monad.Trans
 import           Data.Bifunctor
 import           Data.Bitraversable
 import qualified Data.List                    as L
-import           Data.List.Split              (splitEvery)
+import           Data.List.Split              (chunksOf)
 
 
 parMapChunkM :: NFData b => Int -> (a -> IO b) -> [a] -> IO [b]
-parMapChunkM chunk f = runParIO . fmap concat . parMapM (step f) . splitEvery chunk
+parMapChunkM chunk f = runParIO . fmap concat . parMapM (step f) . chunksOf chunk
 
 step :: NFData b => (a -> IO b) -> [a] -> ParIO [b]
 step f xs = do
