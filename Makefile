@@ -14,7 +14,7 @@ CORPUS=corpora/gutenberg
 all: test docs package
 
 test:
-	stack build
+	stack test
 
 specs: build
 	./dist/build/stat-nlp-specs/stat-nlp-specs
@@ -45,6 +45,9 @@ tags: ${SRC}
 hlint:
 	hlint *.hs src specs
 
+ghcid:
+	ghcid "--command=stack ghci Main.hs `find src -name \*.hs`"
+
 clean:
 	stack clean
 	-rm -rf *.hp *.prof *.ps *.aux
@@ -68,4 +71,4 @@ restart: distclean build
 
 rebuild: clean build
 
-.PHONY: all test run clean distclean deps build rebuild hlint watch tags
+.PHONY: all test run clean distclean deps build rebuild hlint watch tags ghcid
