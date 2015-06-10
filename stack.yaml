@@ -1,0 +1,7 @@
+flags: {}
+packages:
+- '.'
+- '../../p/taygeta'
+- '../../p/text-regex-replace'
+extra-deps: []
+resolver: nightly-2015-06-10

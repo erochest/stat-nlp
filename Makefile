@@ -2,27 +2,25 @@
 SRC=$(shell find src -name '*.hs')
 
 CABAL=cabal
-FLAGS=--enable-tests --enable-library-profiling --enable-executable-profiling
 
+# FLAGS=--enable-tests --enable-library-profiling --enable-executable-profiling
 # FLAGS=--enable-tests
+
 RUN_FLAGS=
-# CORPUS=corpora/gutenberg
-CORPUS=corpora/gutenberg/melville-moby_dick.txt
 
-all: init test docs package
+CORPUS=corpora/gutenberg
+# CORPUS=corpora/gutenberg/melville-moby_dick.txt
 
-init:
-	${CABAL} sandbox init
-	${CABAL} sandbox add-source ~/p/taygeta
-	make deps
+all: test docs package
 
-test: build
-	${CABAL} test --test-option=--color
+test:
+	stack build
 
 specs: build
 	./dist/build/stat-nlp-specs/stat-nlp-specs
 
 run:
+	stack build
 	${CABAL} run $(CORPUS) whale $(RUN_FLAGS)
 
 
@@ -48,31 +46,26 @@ hlint:
 	hlint *.hs src specs
 
 clean:
-	${CABAL} clean
+	stack clean
 	-rm -rf *.hp *.prof *.ps *.aux
 	codex cache clean
 
 distclean: clean
-	${CABAL} sandbox delete
 
-configure: clean
-	${CABAL} configure ${FLAGS}
-
-deps: clean
-	${CABAL} install --only-dependencies --allow-newer ${FLAGS}
-	make configure
+deps:
+	stack deps
 
 stat-nlp.ps: stat-nlp.hp
 	hp2ps -e8in -c $<
 
 build:
-	${CABAL} build
+	stack build
 
 watch:
-	arion . src specs
+	ghcid
 
-restart: distclean init build
+restart: distclean build
 
-rebuild: clean configure build
+rebuild: clean build
 
-.PHONY: all init test run clean distclean configure deps build rebuild hlint watch tags
+.PHONY: all test run clean distclean deps build rebuild hlint watch tags
