@@ -52,7 +52,7 @@ hlint:
 	hlint *.hs src specs
 
 ghcid:
-	ghcid "--command=stack ghci Main.hs `find src -name \*.hs`"
+	ghcid "--command=stack ghci"
 
 clean:
 	stack clean
