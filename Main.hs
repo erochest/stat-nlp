@@ -80,7 +80,6 @@ main = do
         ngrams = foldParMap (frequencies . ngramsV 2) tokens
         top    = fmap (first (T.intercalate " " . V.toList))
                . L.sortBy (comparing (Down . snd))
-               . M.toList
-               $ tTestNGramMatrix ngrams freqs
+               $ tTestNGramMatrixList ngrams freqs
 
     mapM_ (F.print "{}\t{}\n") top

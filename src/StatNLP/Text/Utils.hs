@@ -89,14 +89,18 @@ tTestNGramFreqsTotals (MHash ngrams) totalNGrams (MHash items) totalItems target
         hits   = actualFreq * (1.0 - actual)^2
         misses = (totalNGrams' - actualFreq) * (0.0 - actual)^2
 
-
 tTestNGramMatrix :: (Eq a, Hashable a, NFData a)
                  => FreqMap (V.Vector a)
                  -> FreqMap a
                  -> M.HashMap (V.Vector a) Double
-tTestNGramMatrix ngrams items =
-      M.fromList
-    . runPar
+tTestNGramMatrix ngrams = M.fromList . tTestNGramMatrixList ngrams
+
+tTestNGramMatrixList :: (Eq a, Hashable a, NFData a)
+                     => FreqMap (V.Vector a)
+                     -> FreqMap a
+                     -> [(V.Vector a, Double)]
+tTestNGramMatrixList ngrams items =
+      runPar
     . parMap (id &&& tTestNGramFreqsTotals ngrams ngramsTotal items itemsTotal)
     . M.keys
     $ unHash ngrams
