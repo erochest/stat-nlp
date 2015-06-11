@@ -86,6 +86,7 @@ executable stat-nlp
                      , deepseq
                      , hashable
                      , lens
+                     , monad-par
                      , mtl
                      , optparse-applicative
                      , taygeta
@@ -100,7 +101,7 @@ executable stat-nlp
                        -threaded
                        "-with-rtsopts=-N -s"
   ghc-prof-options:    -fprof-auto
-                       "-with-rtsopts=-p -s -h -i0.1"
+                       "-with-rtsopts=-N -p -s -h -i0.1"
 
 test-suite stat-nlp-specs
   type:                exitcode-stdio-1.0

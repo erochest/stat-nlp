@@ -7,6 +7,7 @@ module StatNLP.Statistics
     , summaryStatsByC
     , completeSummaryStats
     , zScore
+    , tTest
     ) where
 
 
@@ -64,3 +65,10 @@ completeSummaryStats (OSS n x' m)
 
 zScore :: Double -> Double -> Double -> Double
 zScore m sd x = (x - m) / sd
+
+tTest :: Double     -- ^ Expected mean.
+      -> Double     -- ^ Actual mean.
+      -> Double     -- ^ Sample standard deviation
+      -> Int        -- ^ Count
+      -> Double     -- ^ Results of the t-test
+tTest x_ expected stddev n = (x_ - expected) / (stddev / sqrt (fromIntegral n))

@@ -5,17 +5,14 @@ import qualified Data.Text           as T
 import           Options.Applicative
 
 
-type Args = (FilePath, Maybe T.Text)
+type Args = FilePath
 
 parseArgs :: IO Args
 parseArgs = execParser opts
 
 opts' :: Parser Args
-opts' =   (,)
-      <$> argument fileOpt (  metavar "CORPUS_DIR"
-                           <> help "The root directory for the corpus files.")
-      <*> optional (argument textOpt (  metavar "SEARCH_TERM"
-                                     <> help "A term to search for."))
+opts' = argument fileOpt (  metavar "CORPUS_DIR"
+                         <> help "The root directory for the corpus files.")
 
 opts :: ParserInfo Args
 opts = info (helper <*> opts')

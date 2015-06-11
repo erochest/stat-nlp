@@ -1,12 +1,13 @@
-{-# LANGUAGE DeriveFunctor         #-}
-{-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE DeriveTraversable     #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedLists       #-}
-{-# LANGUAGE TemplateHaskell       #-}
-{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE DeriveFunctor              #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DeriveTraversable          #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedLists            #-}
+{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TypeFamilies               #-}
 
 
 module StatNLP.Types
@@ -113,6 +114,7 @@ import           Taygeta.Types         (PlainToken, PlainTokenizer, Tokenizer)
 
 
 newtype MonoidHash a p = MHash { unHash :: M.HashMap a p }
+                         deriving (NFData)
 
 instance Functor (MonoidHash a) where
     fmap f (MHash m) = MHash $ fmap f m

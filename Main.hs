@@ -10,6 +10,7 @@ import           Control.Arrow           ((&&&))
 import           Control.DeepSeq
 import           Control.Lens
 import           Control.Monad.Identity
+import           Control.Monad.Par
 import           Data.Bifunctor
 import           Data.BloomFilter.Easy
 import qualified Data.BloomFilter.Easy   as BF
@@ -60,19 +61,26 @@ import           Opts
 
 main :: IO ()
 main = do
-    (corpusPath, mtarget) <- parseArgs
+    corpusPath <- parseArgs
 
     -- stopwords
     stopwords <-  S.fromList . fmap _tokenNorm . tokenizer
               <$> TIO.readFile "corpora/stopwords/english"
 
     F.print "Reading corpus from {}\n" $ F.Only corpusPath
-    corpus <- loadCorpusDirectory tokenizer reader return corpusPath
-    docs   <- readCorpusVectors mtarget corpus
-    F.print "Documents potentially containing '{}' : {} / {}\n"
-            (fromMaybe "0" mtarget, L.length docs, M.size (_corpusDocuments corpus))
+    corpus <- loadCorpusDirectory (tokenizerStop stopwords) reader return corpusPath
+    docs   <- readCorpusVectors Nothing corpus
+    F.print "Documents read {}\n" . F.Only . M.size $ _corpusDocuments corpus
 
-    let InverseIndex index  = foldMap inverseIndexDocument docs
-        targets             = L.sort $ maybe (M.keys index) return mtarget
+    let tokens = fmap (fmap _tokenNorm . _documentTokens) $ M.elems docs
+        foldParMap f = fold . runPar . parMap f
+        -- freqs  = foldMap frequencies tokens
+        freqs  = foldParMap frequencies tokens
+        -- ngrams = foldMap (frequencies . ngramsV 2) tokens
+        ngrams = foldParMap (frequencies . ngramsV 2) tokens
+        top    = fmap (first (T.intercalate " " . V.toList))
+               . L.sortBy (comparing (Down . snd))
+               . M.toList
+               $ tTestNGramMatrix ngrams freqs
 
-    mapM_ (const (putStrLn "") <=< printColls index docs) targets
+    mapM_ (F.print "{}\t{}\n") top

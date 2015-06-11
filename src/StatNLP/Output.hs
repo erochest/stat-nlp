@@ -14,6 +14,7 @@ import           Data.Ord
 import qualified Data.Text               as T
 import           Data.Text.Buildable
 import qualified Data.Text.Format        as F
+import qualified Data.Vector             as V
 
 import           StatNLP.Document
 import           StatNLP.Statistics
