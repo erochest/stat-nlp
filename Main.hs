@@ -10,7 +10,6 @@ import           Control.Arrow           ((&&&))
 import           Control.DeepSeq
 import           Control.Lens
 import           Control.Monad.Identity
-import           Control.Monad.Par
 import           Data.Bifunctor
 import           Data.BloomFilter.Easy
 import qualified Data.BloomFilter.Easy   as BF
@@ -41,7 +40,7 @@ import           Debug.Trace
 import           StatNLP.Corpus
 import           StatNLP.Document
 import           StatNLP.Input
-import           StatNLP.Output
+import           StatNLP.Output          hiding (flatten)
 import           StatNLP.Output.Kwic
 import           StatNLP.Text.Collocates
 import           StatNLP.Text.Index      hiding (toList)
@@ -61,7 +60,7 @@ import           Opts
 
 main :: IO ()
 main = do
-    corpusPath <- parseArgs
+    (corpusPath, target) <- parseArgs
 
     -- stopwords
     stopwords <-  S.fromList . fmap _tokenNorm . tokenizer
@@ -72,14 +71,16 @@ main = do
     docs   <- readCorpusVectors Nothing corpus
     F.print "Documents read {}\n" . F.Only . M.size $ _corpusDocuments corpus
 
-    let tokens = fmap (fmap _tokenNorm . _documentTokens) $ M.elems docs
-        foldParMap f = fold . runPar . parMap f
-        -- freqs  = foldMap frequencies tokens
-        freqs  = foldParMap frequencies tokens
-        -- ngrams = foldMap (frequencies . ngramsV 2) tokens
-        ngrams = foldParMap (frequencies . ngramsV 2) tokens
-        top    = fmap (first (T.intercalate " " . V.toList))
-               . L.sortBy (comparing (Down . snd))
-               $ tTestNGramMatrixList ngrams freqs
+    mapM_ (F.print "{} ({})\t{} ({})\t{}\n")
+        . fmap flatten
+        . L.sortBy (comparing (Down . third))
+        . (`tDifferenceMatrixList` target)
+        . foldParMap (frequencies . mapMaybe vectorPair . ngramsV 2)
+        . fmap (fmap _tokenNorm . _documentTokens)
+        $ M.elems docs
 
-    mapM_ (F.print "{}\t{}\n") top
+third :: (a, b, c) -> c
+third (_, _, c) = c
+
+flatten :: ((a, b), (c, d), e) -> (a, b, c, d, e)
+flatten ((a, b), (c, d), e) = (a, b, c, d, e)

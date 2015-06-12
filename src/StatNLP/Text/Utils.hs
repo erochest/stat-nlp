@@ -12,8 +12,10 @@ import           Data.Foldable
 import           Data.Hashable
 import qualified Data.HashMap.Strict          as M
 import qualified Data.List                    as L
+import           Data.Maybe
 import           Data.Monoid
 import           Data.Traversable
+import           Data.Tuple
 import qualified Data.Vector                  as V
 
 import           StatNLP.Statistics
@@ -107,3 +109,32 @@ tTestNGramMatrixList ngrams items =
     where
         ngramsTotal = grandTotal ngrams
         itemsTotal  = grandTotal items
+
+tDifferenceMatrixList :: (Eq a, Hashable a, NFData a, Ord a)
+                      => FreqMap (a, a)
+                      -> a
+                      -> [((a, Int), (a, Int), Double)]
+tDifferenceMatrixList freqs a =
+    runPar $ parMap (uncurry tDiff) pairs
+    where
+        tDiff a@(_, fa) b@(_, fb) = (a, b, tTestDifferences fa fb)
+        counts = fmap (fmap getSum)
+               . M.toList
+               . M.fromListWith mappend
+               . fmap swap
+               . mapMaybe (sequenceA . fmap (collocate a) . swap)
+               . filter ((> 1) . snd)
+               . M.toList
+               $ unHash freqs
+        pairs = [ordPair v1 v2 | v1 <- counts, v2 <- counts, fst v1 /= fst v2]
+
+        ordPair a b | a <= b    = (a, b)
+                    | otherwise = (b, a)
+
+        collocate a (b, c) | a == b    = Just c
+                           | a == c    = Just b
+                           | otherwise = Nothing
+
+vectorPair :: V.Vector a -> Maybe (a, a)
+vectorPair v | V.length v >= 2 = Just (v V.! 0, v V.! 1)
+             | otherwise       = Nothing

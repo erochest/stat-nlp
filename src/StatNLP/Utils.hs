@@ -7,6 +7,8 @@ module StatNLP.Utils where
 import           Control.Applicative
 import           Control.DeepSeq
 import           Control.Monad
+import           Control.Monad.Par
+import           Data.Foldable
 import qualified Data.Text.Format    as F
 import           Data.Time
 import           Data.Traversable
@@ -45,3 +47,6 @@ time m = do
     end   <- a `deepseq` getCurrentTime
     F.print "Elapsed time: {}\n\n" . F.Only . F.Shown $ end `diffUTCTime` start
     return a
+
+foldParMap :: (Traversable t, Monoid b, NFData b) => (a -> b) -> t a -> b
+foldParMap f = fold . runPar . parMap f

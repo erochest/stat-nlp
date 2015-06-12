@@ -5,14 +5,17 @@ import qualified Data.Text           as T
 import           Options.Applicative
 
 
-type Args = FilePath
+type Args = (FilePath, T.Text)
 
 parseArgs :: IO Args
 parseArgs = execParser opts
 
 opts' :: Parser Args
-opts' = argument fileOpt (  metavar "CORPUS_DIR"
-                         <> help "The root directory for the corpus files.")
+opts' =   (,)
+      <$> argument fileOpt (  metavar "CORPUS_DIR"
+                           <> help "The root directory for the corpus files.")
+      <*> argument textOpt (  metavar "TARGET_WORD"
+                           <> help "The term to find major collocates for.")
 
 opts :: ParserInfo Args
 opts = info (helper <*> opts')

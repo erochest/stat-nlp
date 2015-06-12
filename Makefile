@@ -24,7 +24,7 @@ specs: build
 
 run:
 	stack build
-	stack exec -- stat-nlp $(CORPUS) $(RUN_FLAGS) > bigrams.txt
+	stack exec -- stat-nlp $(CORPUS) whale $(RUN_FLAGS) > bigrams.txt
 
 profile:
 	stack build --library-profiling --executable-profiling

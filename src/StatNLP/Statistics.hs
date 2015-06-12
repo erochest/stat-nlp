@@ -8,6 +8,7 @@ module StatNLP.Statistics
     , completeSummaryStats
     , zScore
     , tTest
+    , tTestDifferences
     ) where
 
 
@@ -72,3 +73,13 @@ tTest :: Double     -- ^ Expected mean.
       -> Int        -- ^ Count
       -> Double     -- ^ Results of the t-test
 tTest x_ expected stddev n = (x_ - expected) / (stddev / sqrt (fromIntegral n))
+
+-- | Uses a t-test to compare the whether the word /w/ collocates with one word
+-- (/v1/) more than another (/v2/).
+tTestDifferences :: Int     -- ^ The count for /w/ and /v1/.
+                 -> Int     -- ^ The count for /w/ and /v2/.
+                 -> Double  -- ^ The results of the t-test.
+tTestDifferences countV1 countV2 = (v1 - v2) / sqrt (v1 + v2)
+    where
+        v1 = fromIntegral countV1
+        v2 = fromIntegral countV2
