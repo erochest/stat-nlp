@@ -31,7 +31,6 @@ walkDirectory = walk <=< makeAbsolute
     where
         walk :: FilePath -> IO [FilePath]
         walk root = do
-            putStrLn $ "Walking " ++ root
             children      <-  fmap (root </>) . filter (not . isHidden)
                           <$> getDirectoryContents root
             (dirs, files) <-  partitionM doesDirectoryExist children
