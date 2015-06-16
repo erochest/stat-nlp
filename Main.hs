@@ -78,7 +78,7 @@ main = do
     mapM_ (F.print "{} ({})\t{} ({})\t{}\t{}\n")
         . fmap flatten
         . L.sortBy (comparing (Down . third))
-        $ likelihoodMatrixList freqs ngrams
+        $ pointwiseMIMatrixList freqs ngrams
 
 flatten :: (((a, b), (c, d)), e, f) -> (a, b, c, d, e, f)
 flatten (((a, b), (c, d)), e, f) = (a, b, c, d, e, f)

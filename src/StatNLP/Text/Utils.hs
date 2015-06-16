@@ -136,31 +136,53 @@ tDifferenceMatrixList freqs a =
                            | a == c    = Just b
                            | otherwise = Nothing
 
+lookup' :: (Eq a, Hashable a) => M.HashMap a (Sum Int) -> a -> Int
+lookup' m k = getSum $ M.lookupDefault mempty k m
+
 likelihoodMatrixList :: (Eq a, Hashable a, NFData a)
                      => FreqMap a
                      -> FreqMap (a, a)
                      -> [(((a, Double), (a, Double)), Double, Double)]
 likelihoodMatrixList freqs ngrams =
-    filter (isNum . third) . runPar
-                           . parMap (uncurry lhr . fmap getSum)
-                           . filter ((>1) . snd)
-                           . M.toList
-                           $ unHash ngrams
+    filter (isNum . third) $ matrixList lhr ngrams
     where
         isNum x     = not $ isNaN x || isInfinite x
         totalFreqs' = grandTotal freqs
         totalFreqs  = fromIntegral totalFreqs'
         totalNGrams = fromIntegral $ grandTotal ngrams
-        lookup m k  = getSum $ M.lookupDefault mempty k m
         freqs'      = unHash freqs
-        lhr ng@(a, b) c = let ac = lookup freqs' a
-                              bc = lookup freqs' b
+        lhr ng@(a, b) c = let ac = lookup' freqs' a
+                              bc = lookup' freqs' b
                               ap = (fromIntegral ac) / totalFreqs
                               bp = (fromIntegral bc) / totalFreqs
                               lr = likelihoodRatio ap ac bp bc
                                            (fromIntegral c / totalNGrams) c
                                            totalFreqs'
                           in  (((a, ap), (b, bp)), fromIntegral c / totalNGrams, lr)
+
+pointwiseMIMatrixList :: (Eq a, Hashable a, NFData a)
+                      => FreqMap a
+                      -> FreqMap (a, a)
+                      -> [(((a, Double), (a, Double)), Double, Double)]
+pointwiseMIMatrixList freqs ngrams = matrixList mi ngrams
+    where
+        mi ng@(a, b) c =
+            let a' = fromIntegral (lookup' freqs' a) / total
+                b' = fromIntegral (lookup' freqs' b) / total
+            in  ( ((a, a'), (b, b'))
+                , fromIntegral c / ngTotal
+                , pointwiseMI a' b'
+                )
+
+        freqs'  = unHash freqs
+        total   = fromIntegral $ grandTotal freqs
+        ngTotal = fromIntegral $ grandTotal ngrams
+
+matrixList :: (NFData b) => (a -> Int -> b) -> FreqMap a -> [b]
+matrixList f freqs =
+    runPar . parMap (uncurry f . fmap getSum)
+           . M.toList
+           $ unHash freqs
 
 vectorPair :: V.Vector a -> Maybe (a, a)
 vectorPair v | V.length v >= 2 = Just (v V.! 0, v V.! 1)

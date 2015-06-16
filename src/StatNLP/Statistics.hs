@@ -10,6 +10,8 @@ module StatNLP.Statistics
     , tTest
     , tTestDifferences
     , likelihoodRatio
+    , pointwiseMI
+    , pointwiseMI'
     ) where
 
 
@@ -103,3 +105,13 @@ likelihoodRatio p1 c1 p2 c2 p12 c12 n =
 
 log' :: Floating x => x -> x
 log' = logBase 2
+
+-- | Calculates the pointwise mutual information of the pair /x y/, with
+-- /y | x/
+pointwiseMI :: Double -> Double -> Double
+pointwiseMI x y = log' $ y / (x * y)
+
+pointwiseMI' :: Int -> Int -> Int -> Double
+pointwiseMI' x y n = pointwiseMI (fromIntegral x / n') (fromIntegral y / n')
+    where
+        n' = fromIntegral n
