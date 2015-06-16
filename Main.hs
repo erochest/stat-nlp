@@ -72,8 +72,9 @@ main = do
     F.print "Documents read {}\n" . F.Only . M.size $ _corpusDocuments corpus
 
     let tokens = fmap (fmap _tokenNorm . _documentTokens) $ M.elems docs
-        freqs  = foldParMap frequencies tokens
-        ngrams = foldParMap (frequencies . mapMaybe vectorPair . ngramsV 2) tokens
+        freqs  = foldParMapChunk 1024 frequencies tokens
+        ngrams = foldParMapChunk 1024 (frequencies . mapMaybe vectorPair . ngramsV 2)
+                                 tokens
     mapM_ (F.print "{} ({})\t{} ({})\t{}\t{}\n")
         . fmap flatten
         . L.sortBy (comparing (Down . third))
