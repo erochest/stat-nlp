@@ -8,11 +8,11 @@ CABAL=cabal
 
 RUN_FLAGS=
 
-# CORPUS=corpora/gutenberg
+CORPUS=corpora/gutenberg
 # CORPUS=corpora/gutenberg/README
 # CORPUS=corpora/gutenberg/carroll-alice.txt
 # CORPUS=corpora/gutenberg/austen-persuasion.txt
-CORPUS=corpora/gutenberg/melville-moby_dick.txt
+# CORPUS=corpora/gutenberg/melville-moby_dick.txt
 
 all: test docs package
 
@@ -24,7 +24,7 @@ specs: build
 
 run:
 	stack build
-	stack exec -- stat-nlp $(CORPUS) whale $(RUN_FLAGS) > bigrams.txt
+	stack exec -- stat-nlp $(CORPUS) $(RUN_FLAGS) > bigrams.txt
 
 profile:
 	stack build --library-profiling --executable-profiling

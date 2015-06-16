@@ -60,7 +60,7 @@ import           Opts
 
 main :: IO ()
 main = do
-    (corpusPath, target) <- parseArgs
+    corpusPath <- parseArgs
 
     -- stopwords
     stopwords <-  S.fromList . fmap _tokenNorm . tokenizer
@@ -71,16 +71,13 @@ main = do
     docs   <- readCorpusVectors Nothing corpus
     F.print "Documents read {}\n" . F.Only . M.size $ _corpusDocuments corpus
 
-    mapM_ (F.print "{} ({})\t{} ({})\t{}\n")
+    let tokens = fmap (fmap _tokenNorm . _documentTokens) $ M.elems docs
+        freqs  = foldParMap frequencies tokens
+        ngrams = foldParMap (frequencies . mapMaybe vectorPair . ngramsV 2) tokens
+    mapM_ (F.print "{} ({})\t{} ({})\t{}\t{}\n")
         . fmap flatten
         . L.sortBy (comparing (Down . third))
-        . (`tDifferenceMatrixList` target)
-        . foldParMap (frequencies . mapMaybe vectorPair . ngramsV 2)
-        . fmap (fmap _tokenNorm . _documentTokens)
-        $ M.elems docs
+        $ likelihoodMatrixList freqs ngrams
 
-third :: (a, b, c) -> c
-third (_, _, c) = c
-
-flatten :: ((a, b), (c, d), e) -> (a, b, c, d, e)
-flatten ((a, b), (c, d), e) = (a, b, c, d, e)
+flatten :: (((a, b), (c, d)), e, f) -> (a, b, c, d, e, f)
+flatten (((a, b), (c, d)), e, f) = (a, b, c, d, e, f)

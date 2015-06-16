@@ -9,6 +9,7 @@ module StatNLP.Statistics
     , zScore
     , tTest
     , tTestDifferences
+    , likelihoodRatio
     ) where
 
 
@@ -83,3 +84,20 @@ tTestDifferences countV1 countV2 = (v1 - v2) / sqrt (v1 + v2)
     where
         v1 = fromIntegral countV1
         v2 = fromIntegral countV2
+
+likelihoodRatio :: Double       -- ^ Probability of /w1/.
+                -> Int          -- ^ Frequency of /w1/.
+                -> Double       -- ^ Probability of /w2/.
+                -> Int          -- ^ Frequency of /w2/.
+                -> Double       -- ^ Probability of /w1 w2/.
+                -> Int          -- ^ Frequency of /w1 w2/.
+                -> Int          -- ^ N
+                -> Double       -- ^ The log likelihood ratio.
+likelihoodRatio p1 c1 p2 c2 p12 c12 n =
+    -2 * ( log' (l c12 c1 p12)
+         + log' (l (c2 - c12) (n - c1) p12)
+         - log' (l c12 c1 p1)
+         - log' (l (c2 - c12) (n - c1) p2))
+    where
+        l k n x = x^k * (1 - x)^(n - k)
+        log'    = logBase 2

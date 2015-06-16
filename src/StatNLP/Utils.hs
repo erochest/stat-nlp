@@ -50,3 +50,6 @@ time m = do
 
 foldParMap :: (Traversable t, Monoid b, NFData b) => (a -> b) -> t a -> b
 foldParMap f = fold . runPar . parMap f
+
+third :: (a, b, c) -> c
+third (_, _, c) = c

@@ -20,6 +20,7 @@ import qualified Data.Vector                  as V
 
 import           StatNLP.Statistics
 import           StatNLP.Types
+import           StatNLP.Utils
 
 
 count :: (Eq a, Hashable a) => FreqMap a -> a -> FreqMap a
@@ -134,6 +135,32 @@ tDifferenceMatrixList freqs a =
         collocate a (b, c) | a == b    = Just c
                            | a == c    = Just b
                            | otherwise = Nothing
+
+likelihoodMatrixList :: (Eq a, Hashable a, NFData a)
+                     => FreqMap a
+                     -> FreqMap (a, a)
+                     -> [(((a, Double), (a, Double)), Double, Double)]
+likelihoodMatrixList freqs ngrams =
+    filter (isNum . third) . runPar
+                           . parMap (uncurry lhr . fmap getSum)
+                           . filter ((>1) . snd)
+                           . M.toList
+                           $ unHash ngrams
+    where
+        isNum x     = not $ isNaN x || isInfinite x
+        totalFreqs' = grandTotal freqs
+        totalFreqs  = fromIntegral totalFreqs'
+        totalNGrams = fromIntegral $ grandTotal ngrams
+        lookup m k  = getSum $ M.lookupDefault mempty k m
+        freqs'      = unHash freqs
+        lhr ng@(a, b) c = let ac = lookup freqs' a
+                              bc = lookup freqs' b
+                              ap = (fromIntegral ac) / totalFreqs
+                              bp = (fromIntegral bc) / totalFreqs
+                              lr = likelihoodRatio ap ac bp bc
+                                           (fromIntegral c / totalNGrams) c
+                                           totalFreqs'
+                          in  (((a, ap), (b, bp)), fromIntegral c / totalNGrams, lr)
 
 vectorPair :: V.Vector a -> Maybe (a, a)
 vectorPair v | V.length v >= 2 = Just (v V.! 0, v V.! 1)
