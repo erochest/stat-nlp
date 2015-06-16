@@ -100,4 +100,6 @@ likelihoodRatio p1 c1 p2 c2 p12 c12 n =
          - log' (l (c2 - c12) (n - c1) p2))
     where
         l k n x = x^k * (1 - x)^(n - k)
-        log'    = logBase 2
+
+log' :: Floating x => x -> x
+log' = logBase 2
