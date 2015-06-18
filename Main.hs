@@ -67,7 +67,7 @@ main = do
               <$> TIO.readFile "corpora/stopwords/english"
 
     F.print "Reading corpus from {}\n" $ F.Only corpusPath
-    corpus <- loadCorpusDirectory (tokenizerStop stopwords) reader return corpusPath
+    corpus <- loadCorpusDirectory (tokenizer' stopwords) reader return corpusPath
     docs   <- readCorpusVectors Nothing corpus
     F.print "Documents read {}\n" . F.Only . M.size $ _corpusDocuments corpus
 
@@ -79,6 +79,15 @@ main = do
         . fmap flatten
         . L.sortBy (comparing (Down . third))
         $ pointwiseMIMatrixList freqs ngrams
+
+tokenizer' :: StopWords -> Tokenizer (Token LinePos PlainToken)
+tokenizer' = tokenizerStop
+{-
+ - tokenizer' stopwords input =
+ -     runIdentity $  sourceList (T.lines input)
+ -                 $= tokenStopC stopwords
+ -                 $$ sinkList
+ -}
 
 flatten :: (((a, b), (c, d)), e, f) -> (a, b, c, d, e, f)
 flatten (((a, b), (c, d)), e, f) = (a, b, c, d, e, f)

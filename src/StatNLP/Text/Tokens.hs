@@ -5,6 +5,7 @@
 module StatNLP.Text.Tokens where
 
 
+import           Conduit
 import           Control.Lens
 import           Data.Hashable
 import qualified Data.HashMap.Strict  as M
@@ -18,6 +19,9 @@ import           Data.Traversable
 import           StatNLP.Document
 import           StatNLP.Types
 
+
+defTokenRE :: Regex
+defTokenRE = regex [UnicodeWord] "[\\p{L}\\p{M}]+"
 
 posTokenizer :: Regex -> Tokenizer (Token SpanPos PlainToken)
 posTokenizer re = mapMaybe matchToken . findAll re
@@ -34,7 +38,26 @@ lineTokenizer re offset input =
                                  (_spanEnd _tokenPos)
 
 tokenize :: Tokenizer (Token LinePos PlainToken)
-tokenize = lineTokenizer (regex [UnicodeWord] "[\\p{L}\\p{M}]+") 0
+tokenize = lineTokenizer defTokenRE 0
+
+tokenizeC :: Monad m => Conduit T.Text m (Token LinePos PlainToken)
+tokenizeC = go 0
+    where
+        go n = do
+            mline <- await
+            case mline of
+                Just line -> mapM yield (lineTokenizer defTokenRE n line)
+                          >> go (succ n)
+                Nothing   -> return ()
+
+tokenNormC :: Monad m => Conduit T.Text m (Token LinePos PlainToken)
+tokenNormC = tokenizeC =$= mapC normalize
+
+tokenStopC :: Monad m
+           => StopWords
+           -> Conduit T.Text m (Token LinePos PlainToken)
+tokenStopC stopwords =
+    tokenNormC =$= filterC (not . (`S.member` stopwords) . _tokenNorm)
 
 matchToken :: Match -> Maybe (Token SpanPos PlainToken)
 matchToken g = do
