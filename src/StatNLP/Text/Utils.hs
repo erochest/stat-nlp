@@ -43,6 +43,15 @@ tokenTypeRatio fm'@(MHash fm) = fromIntegral (grandTotal fm')
 ngrams :: Int -> [a] -> [[a]]
 ngrams n = filter ((== n) . length) . map (take n) . L.tails
 
+bigrams :: [a] -> [(a, a)]
+bigrams xs = [(a, b) | [a, b] <- ngrams 2 xs]
+
+trigrams :: [a] -> [(a, a, a)]
+trigrams xs = [(a, b, c) | [a, b, c] <- ngrams 3 xs]
+
+fourgrams :: [a] -> [(a, a, a, a)]
+fourgrams xs = [(a, b, c, d) | [a, b, c, d] <- ngrams 4 xs]
+
 ngramsV :: Int -> V.Vector a -> [V.Vector a]
 ngramsV n vs = map (\i -> V.slice i n vs) [0..(V.length vs - n - 1)]
 
