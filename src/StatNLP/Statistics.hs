@@ -12,6 +12,7 @@ module StatNLP.Statistics
     , likelihoodRatio
     , pointwiseMI
     , pointwiseMI'
+    , mle
     ) where
 
 
@@ -115,3 +116,8 @@ pointwiseMI' :: Int -> Int -> Int -> Double
 pointwiseMI' x y n = pointwiseMI (fromIntegral x / n') (fromIntegral y / n')
     where
         n' = fromIntegral n
+
+mle :: Int      -- ^ /C(w1 .. wn)/
+    -> Int      -- ^ /C(w1 .. w(n-1))/
+    -> Double   -- ^ maximum likelihood estimate
+mle cn cn1 = fromIntegral cn / fromIntegral cn1
