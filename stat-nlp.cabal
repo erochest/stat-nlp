@@ -26,6 +26,7 @@ library
                      , StatNLP.Parallel
                      , StatNLP.Statistics
                      , StatNLP.Text.Collocates
+                     , StatNLP.Text.Freqs
                      , StatNLP.Text.Index
                      , StatNLP.Text.Tokens
                      , StatNLP.Text.Utils

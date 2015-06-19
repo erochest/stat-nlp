@@ -61,3 +61,6 @@ foldParMapChunk chunkSize f xs =
 
 third :: (a, b, c) -> c
 third (_, _, c) = c
+
+fourth :: (a, b, c, d) -> d
+fourth (_, _, _, d) = d

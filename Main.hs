@@ -48,6 +48,7 @@ import           StatNLP.Text.Tokens
 import           StatNLP.Text.Utils
 import           StatNLP.Types
 import           StatNLP.Utils
+import StatNLP.Text.Freqs
 
 import           Opts
 
@@ -57,6 +58,13 @@ import           Opts
  - TODO: probability distributions
  -}
 
+
+-- TODO: append this to the beginning of each document
+start :: T.Text
+start = "*"
+
+unknown :: T.Text
+unknown = "<UNK>"
 
 main :: IO ()
 main = do
@@ -71,14 +79,15 @@ main = do
     docs   <- readCorpusVectors Nothing corpus
     F.print "Documents read {}\n" . F.Only . M.size $ _corpusDocuments corpus
 
-    let tokens = fmap (fmap _tokenNorm . _documentTokens) $ M.elems docs
-        freqs  = foldParMapChunk 1024 frequencies tokens
-        ngrams = foldParMapChunk 1024 (frequencies . mapMaybe vectorPair . ngramsV 2)
-                                 tokens
-    mapM_ (F.print "{} ({})\t{} ({})\t{}\t{}\n")
-        . fmap flatten
-        . L.sortBy (comparing (Down . third))
-        $ pointwiseMIMatrixList freqs ngrams
+    let tokens' = fmap (fmap _tokenNorm . _documentTokens) $ M.elems docs
+        freqs'  = foldParMap frequencies tokens'
+        hapax   = hapaxLegomena freqs'
+        tokens  = fmap (replaceFromSet hapax unknown) tokens'
+        freqs   = replaceFreqsFromset hapax unknown freqs'
+        ngrams  = foldParMap (frequencies . trigramsV) tokens
+    mapM_ (F.print "{}\t{}\t{}\t{}\n")
+        . L.sortBy (comparing sortOn)
+        $ mleMatrixList freqs ngrams
 
 tokenizer' :: StopWords -> Tokenizer (Token LinePos PlainToken)
 tokenizer' = tokenizerStop
@@ -88,6 +97,10 @@ tokenizer' = tokenizerStop
  -                 $= tokenStopC stopwords
  -                 $$ sinkList
  -}
+
+sortOn :: (a, b, c, d) -> (a, b, Down d)
+sortOn (a, b, _, d) = (a, b, Down d)
+
 
 flatten :: (((a, b), (c, d)), e, f) -> (a, b, c, d, e, f)
 flatten (((a, b), (c, d)), e, f) = (a, b, c, d, e, f)

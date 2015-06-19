@@ -16,6 +16,7 @@ import           Data.Maybe
 import           Data.Monoid
 import           Data.Traversable
 import           Data.Tuple
+import           Data.Vector                  ((!?))
 import qualified Data.Vector                  as V
 
 import           StatNLP.Statistics
@@ -28,6 +29,13 @@ count m a = MHash . M.insertWith mappend a 1 $ unHash m
 
 frequencies :: (Eq a, Hashable a, Foldable f) => f a -> FreqMap a
 frequencies = foldl' count mempty
+
+frequencyBy :: (Eq k, Hashable k, Eq v, Hashable v, Foldable f)
+            => (a -> k) -> (a -> v) -> f a -> MonoidHash k (FreqMap v)
+frequencyBy by value =
+    foldMap ( MHash
+            . uncurry M.singleton
+            . (by &&& (MHash . (`M.singleton` 1) . value)))
 
 frequenciesC :: (Eq a, Hashable a, Monad m)
              => Consumer a m (FreqMap a)
@@ -54,6 +62,21 @@ fourgrams xs = [(a, b, c, d) | [a, b, c, d] <- ngrams 4 xs]
 
 ngramsV :: Int -> V.Vector a -> [V.Vector a]
 ngramsV n vs = map (\i -> V.slice i n vs) [0..(V.length vs - n - 1)]
+
+bigramsV :: V.Vector a -> [(a, a)]
+bigramsV = mapMaybe tuple . ngramsV 2
+    where
+        tuple v = (,) <$> v !? 0 <*> v !? 1
+
+trigramsV :: V.Vector a -> [(a, a, a)]
+trigramsV = mapMaybe tuple . ngramsV 3
+    where
+        tuple v = (,,) <$> v !? 0 <*> v !? 1 <*> v !? 2
+
+fourgramsV :: V.Vector a -> [(a, a, a, a)]
+fourgramsV = mapMaybe tuple . ngramsV 4
+    where
+        tuple v = (,,,) <$> v !? 0 <*> v !? 1 <*> v !? 2 <*> v !? 3
 
 ngramsC :: Monad m => Int -> Conduit a m (V.Vector a)
 ngramsC = slidingWindowC
@@ -186,6 +209,26 @@ pointwiseMIMatrixList freqs ngrams = matrixList mi ngrams
         freqs'  = unHash freqs
         total   = fromIntegral $ grandTotal freqs
         ngTotal = fromIntegral $ grandTotal ngrams
+
+mleMatrixList :: (Eq a, Hashable a, NFData a)
+              => FreqMap a
+              -> FreqMap (a, a, a)
+              -> [(a, a, a, Double)]
+mleMatrixList freqs g3 =
+    runPar . fmap concat
+           . parMap mlePair
+           . M.toList
+           $ unHash g2
+    where
+        dropThird (a, b, _) = (a, b)
+        g2 = frequencyBy dropThird third . M.keys $ unHash g3
+        mlePair ((a, b), freqs) =
+            map (uncurry (mle' a b total) . fmap getSum)
+                . M.toList
+                $ unHash freqs
+            where
+                total = grandTotal freqs
+        mle' a b cn1 c cn = (a, b, c, mle cn cn1)
 
 matrixList :: (NFData b) => (a -> Int -> b) -> FreqMap a -> [b]
 matrixList f freqs =
