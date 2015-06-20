@@ -75,7 +75,7 @@ main = do
               <$> TIO.readFile "corpora/stopwords/english"
 
     F.print "Reading corpus from {}\n" $ F.Only corpusPath
-    corpus <- loadCorpusDirectory (tokenizer' stopwords) reader return corpusPath
+    corpus <- loadCorpusDirectory tokenizer reader return corpusPath
     docs   <- readCorpusVectors Nothing corpus
     F.print "Documents read {}\n" . F.Only . M.size $ _corpusDocuments corpus
 
