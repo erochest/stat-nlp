@@ -192,19 +192,20 @@ mleMatrixList :: (Ord a, Eq a, Hashable a, NFData a)
               -> FreqMap (a, a, a)
               -> [(a, a, a, Int, Double)]
 mleMatrixList freqs g3 =
-    runPar . fmap concat
+    runPar . fmap (concat . catMaybes)
            . parMap mlePair
            . M.toList
            $ unHash g2
     where
         dropThird (a, b, _) = (a, b)
         g2 = groupFreqsBy dropThird third g3
-        mlePair ((a, b), freqs) =
-            map (uncurry (mle' a b total) . fmap getSum)
-                . M.toList
-                $ unHash freqs
+        mlePair :: ((a, a), FreqMap a) -> Maybe [(a, a, a, Int, Double)]
+        mlePair ((a, b), fqs@(MHash freqs))
+            | M.size freqs > 1 = Just . map (uncurry (mle' a b total) . fmap getSum)
+                                      $ M.toList freqs
+            | otherwise = Nothing
             where
-                total = grandTotal freqs
+                total = grandTotal fqs
         mle' a b cn1 c cn = (a, b, c, cn, mle cn cn1)
 
 matrixList :: (NFData b) => (a -> Int -> b) -> FreqMap a -> [b]
