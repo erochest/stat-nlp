@@ -19,6 +19,7 @@ import qualified Data.Vector             as V
 import           StatNLP.Document
 import           StatNLP.Statistics
 import           StatNLP.Text.Collocates
+import           StatNLP.Text.Freqs
 import           StatNLP.Text.Utils
 import           StatNLP.Types
 

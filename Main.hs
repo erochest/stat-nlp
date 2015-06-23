@@ -43,12 +43,12 @@ import           StatNLP.Input
 import           StatNLP.Output          hiding (flatten)
 import           StatNLP.Output.Kwic
 import           StatNLP.Text.Collocates
+import           StatNLP.Text.Freqs
 import           StatNLP.Text.Index      hiding (toList)
 import           StatNLP.Text.Tokens
 import           StatNLP.Text.Utils
 import           StatNLP.Types
 import           StatNLP.Utils
-import StatNLP.Text.Freqs
 
 import           Opts
 
@@ -83,9 +83,9 @@ main = do
         freqs'  = foldParMap frequencies tokens'
         hapax   = hapaxLegomena freqs'
         tokens  = fmap (replaceFromSet hapax unknown) tokens'
-        freqs   = replaceFreqsFromset hapax unknown freqs'
+        freqs   = replaceFreqsFromSet hapax unknown freqs'
         ngrams  = foldParMap (frequencies . trigramsV) tokens
-    mapM_ (F.print "{}\t{}\t{}\t{}\n")
+    mapM_ (F.print "{}\t{}\t{}\t{}\t{}\n")
         . L.sortBy (comparing sortOn)
         $ mleMatrixList freqs ngrams
 
@@ -98,8 +98,8 @@ tokenizer' = tokenizerStop
  -                 $$ sinkList
  -}
 
-sortOn :: (a, b, c, d) -> (a, b, Down d)
-sortOn (a, b, _, d) = (a, b, Down d)
+sortOn :: (a, b, c, d, e) -> (a, b, Down d, c)
+sortOn (a, b, c, d, _) = (a, b, Down d, c)
 
 
 flatten :: (((a, b), (c, d)), e, f) -> (a, b, c, d, e, f)

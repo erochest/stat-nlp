@@ -20,33 +20,10 @@ import           Data.Vector                  ((!?))
 import qualified Data.Vector                  as V
 
 import           StatNLP.Statistics
+import           StatNLP.Text.Freqs
 import           StatNLP.Types
 import           StatNLP.Utils
 
-
-count :: (Eq a, Hashable a) => FreqMap a -> a -> FreqMap a
-count m a = MHash . M.insertWith mappend a 1 $ unHash m
-
-frequencies :: (Eq a, Hashable a, Foldable f) => f a -> FreqMap a
-frequencies = foldl' count mempty
-
-frequencyBy :: (Eq k, Hashable k, Eq v, Hashable v, Foldable f)
-            => (a -> k) -> (a -> v) -> f a -> MonoidHash k (FreqMap v)
-frequencyBy by value =
-    foldMap ( MHash
-            . uncurry M.singleton
-            . (by &&& (MHash . (`M.singleton` 1) . value)))
-
-frequenciesC :: (Eq a, Hashable a, Monad m)
-             => Consumer a m (FreqMap a)
-frequenciesC = foldlC count mempty
-
-grandTotal :: FreqMap a -> Int
-grandTotal = getSum . fold . M.elems . unHash
-
-tokenTypeRatio :: FreqMap a -> Double
-tokenTypeRatio fm'@(MHash fm) = fromIntegral (grandTotal fm')
-                              / fromIntegral (M.size fm)
 
 ngrams :: Int -> [a] -> [[a]]
 ngrams n = filter ((== n) . length) . map (take n) . L.tails
@@ -210,10 +187,10 @@ pointwiseMIMatrixList freqs ngrams = matrixList mi ngrams
         total   = fromIntegral $ grandTotal freqs
         ngTotal = fromIntegral $ grandTotal ngrams
 
-mleMatrixList :: (Eq a, Hashable a, NFData a)
+mleMatrixList :: (Ord a, Eq a, Hashable a, NFData a)
               => FreqMap a
               -> FreqMap (a, a, a)
-              -> [(a, a, a, Double)]
+              -> [(a, a, a, Int, Double)]
 mleMatrixList freqs g3 =
     runPar . fmap concat
            . parMap mlePair
@@ -221,14 +198,14 @@ mleMatrixList freqs g3 =
            $ unHash g2
     where
         dropThird (a, b, _) = (a, b)
-        g2 = frequencyBy dropThird third . M.keys $ unHash g3
+        g2 = groupFreqsBy dropThird third g3
         mlePair ((a, b), freqs) =
             map (uncurry (mle' a b total) . fmap getSum)
                 . M.toList
                 $ unHash freqs
             where
                 total = grandTotal freqs
-        mle' a b cn1 c cn = (a, b, c, mle cn cn1)
+        mle' a b cn1 c cn = (a, b, c, cn, mle cn cn1)
 
 matrixList :: (NFData b) => (a -> Int -> b) -> FreqMap a -> [b]
 matrixList f freqs =

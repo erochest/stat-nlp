@@ -13,6 +13,8 @@ CORPUS=corpora/gutenberg
 # CORPUS=corpora/gutenberg/carroll-alice.txt
 # CORPUS=corpora/gutenberg/austen-persuasion.txt
 # CORPUS=corpora/gutenberg/melville-moby_dick.txt
+# CORPUS=corpora/TOBACCO
+# CORPUS=TEST
 
 all: test docs package
 
