@@ -189,24 +189,22 @@ pointwiseMIMatrixList freqs ngrams = matrixList mi ngrams
 
 mleMatrixList :: (Ord a, Eq a, Hashable a, NFData a)
               => FreqMap a
-              -> FreqMap (a, a, a)
-              -> [(a, a, a, Int, Double)]
+              -> FreqMap (a, a)
+              -> [(a, a, Int, Double)]
 mleMatrixList freqs g3 =
     runPar . fmap (concat . catMaybes)
            . parMap mlePair
            . M.toList
            $ unHash g2
     where
-        dropThird (a, b, _) = (a, b)
-        g2 = groupFreqsBy dropThird third g3
-        mlePair :: ((a, a), FreqMap a) -> Maybe [(a, a, a, Int, Double)]
-        mlePair ((a, b), fqs@(MHash freqs))
-            | M.size freqs > 1 = Just . map (uncurry (mle' a b total) . fmap getSum)
+        g2 = groupFreqsBy fst snd g3
+        mlePair (a, fqs@(MHash freqs))
+            | M.size freqs > 1 = Just . map (uncurry (mle' a total) . fmap getSum)
                                       $ M.toList freqs
             | otherwise = Nothing
             where
                 total = grandTotal fqs
-        mle' a b cn1 c cn = (a, b, c, cn, mle cn cn1)
+        mle' a cn1 b cn = (a, b, cn, mle cn cn1)
 
 matrixList :: (NFData b) => (a -> Int -> b) -> FreqMap a -> [b]
 matrixList f freqs =

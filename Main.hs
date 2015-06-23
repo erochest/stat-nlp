@@ -84,8 +84,8 @@ main = do
         hapax   = hapaxLegomena freqs'
         tokens  = fmap (replaceFromSet hapax unknown) tokens'
         freqs   = replaceFreqsFromSet hapax unknown freqs'
-        ngrams  = foldParMap (frequencies . trigramsV) tokens
-    mapM_ (F.print "{}\t{}\t{}\t{}\t{}\n")
+        ngrams  = foldParMap (frequencies . bigramsV) tokens
+    mapM_ (F.print "{}\t{}\t{}\t{}\n")
         . L.sortBy (comparing sortOn)
         $ mleMatrixList freqs ngrams
 
@@ -98,8 +98,8 @@ tokenizer' = tokenizerStop
  -                 $$ sinkList
  -}
 
-sortOn :: (a, b, c, d, e) -> (a, b, Down d, c)
-sortOn (a, b, c, d, _) = (a, b, Down d, c)
+sortOn :: (a, b, c, d) -> (a, Down c, b)
+sortOn (a, b, c, _) = (a, Down c, b)
 
 
 flatten :: (((a, b), (c, d)), e, f) -> (a, b, c, d, e, f)
