@@ -104,7 +104,6 @@ import qualified Data.HashSet          as S
 import           Data.Monoid
 import           Data.MonoTraversable
 import           Data.Sequence         (Seq)
-import           Data.String
 import qualified Data.Text             as T
 import           Data.Text.Encoding    (encodeUtf8)
 import qualified Data.Vector           as V

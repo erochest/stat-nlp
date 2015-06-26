@@ -7,17 +7,14 @@ module StatNLP.Text.Utils where
 import           Conduit
 import           Control.Arrow
 import           Control.Monad.Par
-import           Control.Monad.Par.Combinator
-import           Data.Foldable
 import           Data.Hashable
-import qualified Data.HashMap.Strict          as M
-import qualified Data.List                    as L
+import qualified Data.HashMap.Strict as M
+import qualified Data.List           as L
 import           Data.Maybe
 import           Data.Monoid
-import           Data.Traversable
 import           Data.Tuple
-import           Data.Vector                  ((!?))
-import qualified Data.Vector                  as V
+import           Data.Vector         ((!?))
+import qualified Data.Vector         as V
 
 import           StatNLP.Statistics
 import           StatNLP.Text.Freqs
@@ -162,8 +159,8 @@ likelihoodMatrixList freqs ngrams =
         freqs'      = unHash freqs
         lhr ng@(a, b) c = let ac = lookup' freqs' a
                               bc = lookup' freqs' b
-                              ap = (fromIntegral ac) / totalFreqs
-                              bp = (fromIntegral bc) / totalFreqs
+                              ap = fromIntegral ac / totalFreqs
+                              bp = fromIntegral bc / totalFreqs
                               lr = likelihoodRatio ap ac bp bc
                                            (fromIntegral c / totalNGrams) c
                                            totalFreqs'

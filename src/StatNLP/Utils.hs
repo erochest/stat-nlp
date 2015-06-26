@@ -4,15 +4,13 @@
 module StatNLP.Utils where
 
 
-import           Control.Applicative
 import           Control.DeepSeq
 import           Control.Monad
 import           Control.Monad.Par
 import           Data.Foldable
 import           Data.List.Split
-import qualified Data.Text.Format    as F
+import qualified Data.Text.Format  as F
 import           Data.Time
-import           Data.Traversable
 import           System.Directory
 import           System.FilePath
 

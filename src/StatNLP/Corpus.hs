@@ -18,16 +18,12 @@ import           Control.Arrow       ((&&&))
 import           Control.Lens
 import           Data.Foldable
 import qualified Data.HashMap.Strict as M
-import           Data.Monoid
-import qualified Data.Text           as T
-import           Data.Text.ICU
 import           Data.Traversable
 import qualified Data.Vector         as V
 import           System.Directory
 
 import           StatNLP.Document
 import           StatNLP.Input
-import           StatNLP.Parallel
 import qualified StatNLP.Text.Index  as I
 import           StatNLP.Text.Tokens
 import           StatNLP.Types

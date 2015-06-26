@@ -1,2 +1,0 @@
-module StatNLP.Index where
-

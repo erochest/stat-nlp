@@ -8,12 +8,11 @@ module StatNLP.Text.Tokens where
 import           Conduit
 import           Control.Lens
 import           Data.Hashable
-import qualified Data.HashMap.Strict  as M
-import qualified Data.HashSet         as S
+import qualified Data.HashMap.Strict as M
+import qualified Data.HashSet        as S
 import           Data.Maybe
-import           Data.MonoTraversable
-import qualified Data.Text            as T
-import           Data.Text.ICU        hiding (normalize)
+import qualified Data.Text           as T
+import           Data.Text.ICU       hiding (normalize)
 import           Data.Traversable
 
 import           StatNLP.Document
@@ -46,7 +45,7 @@ tokenizeC = go 0
         go n = do
             mline <- await
             case mline of
-                Just line -> mapM yield (lineTokenizer defTokenRE n line)
+                Just line -> mapM_ yield (lineTokenizer defTokenRE n line)
                           >> go (succ n)
                 Nothing   -> return ()
 

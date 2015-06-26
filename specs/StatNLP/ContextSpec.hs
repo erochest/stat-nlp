@@ -115,3 +115,8 @@ spec = do
         describe "getContext" $
             it "should return the context as a list." $
                 getContext today `shouldBe` ["of", "my", "life", "."]
+
+
+{- # ANN module "HLint: ignore Functor law" #-}
+{- # ANN module "HLint: ignore Evaluate" #-}
+{- # ANN module "HLint: ignore Use ." #-}

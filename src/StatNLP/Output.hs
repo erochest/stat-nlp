@@ -14,13 +14,11 @@ import           Data.Ord
 import qualified Data.Text               as T
 import           Data.Text.Buildable
 import qualified Data.Text.Format        as F
-import qualified Data.Vector             as V
 
 import           StatNLP.Document
 import           StatNLP.Statistics
 import           StatNLP.Text.Collocates
 import           StatNLP.Text.Freqs
-import           StatNLP.Text.Utils
 import           StatNLP.Types
 
 
@@ -33,7 +31,7 @@ freqReport n = mapM_ (F.print "{}\t{}\n")
              . unHash
 
 flatten :: ((a, b), SummaryStats) -> (a, b, Int, Double, Double)
-flatten ((a, b), (SummaryStats c d e)) = (a, b, c, d, e)
+flatten ((a, b), SummaryStats c d e) = (a, b, c, d, e)
 
 printColls :: M.HashMap PlainToken [(DocumentId, Int)]
            -> M.HashMap DocumentId (VectorDoc b)

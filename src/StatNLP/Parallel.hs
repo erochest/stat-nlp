@@ -8,10 +8,6 @@ import qualified Control.Monad.Par            as P hiding (runParIO)
 import           Control.Monad.Par.Class
 import           Control.Monad.Par.Combinator
 import           Control.Monad.Par.IO
-import           Control.Monad.Trans
-import           Data.Bifunctor
-import           Data.Bitraversable
-import qualified Data.List                    as L
 import           Data.List.Split              (chunksOf)
 
 

@@ -1,7 +1,7 @@
 module Opts where
 
 
-import qualified Data.Text           as T
+import           Data.Text           (Text, pack)
 import           Options.Applicative
 
 
@@ -23,5 +23,5 @@ opts = info (helper <*> opts')
 fileOpt :: ReadM FilePath
 fileOpt = str
 
-textOpt :: ReadM T.Text
-textOpt = T.pack <$> str
+textOpt :: ReadM Text
+textOpt = pack <$> str

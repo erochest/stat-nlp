@@ -15,14 +15,12 @@ import           Data.BloomFilter.Easy
 import qualified Data.BloomFilter.Easy as BF
 import qualified Data.BloomFilter.Hash as H
 import           Data.Conduit.List     (sourceList)
-import           Data.Either
 import           Data.Foldable         (toList)
 import           Data.Hashable
 import qualified Data.HashMap.Strict   as M
 import qualified Data.HashSet          as S
 import           Data.Maybe
 import qualified Data.Text             as T
-import           Data.Text.ICU
 import           Data.Traversable
 import           Data.Tuple
 

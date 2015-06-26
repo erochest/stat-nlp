@@ -370,6 +370,6 @@ paragraphs = [ "\
     ]
 
 getParagraph :: T.Text -> T.Text
-getParagraph "<paragraph0>" = paragraphs !! 0
+getParagraph "<paragraph0>" = head paragraphs
 getParagraph "<paragraph1>" = paragraphs !! 1
 

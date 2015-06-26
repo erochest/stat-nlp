@@ -19,11 +19,10 @@ module StatNLP.Context
     ) where
 
 
-import qualified Data.FingerTree  as FT
+import qualified Data.FingerTree as FT
 import           Data.Foldable
 import           Data.Monoid
-import qualified Data.Sequence    as Seq
-import           Data.Traversable
+import qualified Data.Sequence   as Seq
 
 import           StatNLP.Types
 

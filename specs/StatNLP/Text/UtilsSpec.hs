@@ -17,6 +17,7 @@ import           Data.Ord
 import           Test.Hspec
 import           Test.QuickCheck
 
+import           StatNLP.Text.Freqs
 import           StatNLP.Text.Utils
 import           StatNLP.Types
 

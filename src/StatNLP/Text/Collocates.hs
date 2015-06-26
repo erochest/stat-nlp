@@ -19,16 +19,13 @@ module StatNLP.Text.Collocates
 import           Conduit
 import           Control.Arrow       ((&&&))
 import           Control.Monad       (ap)
-import           Data.Bifunctor
 import           Data.Foldable
 import           Data.Hashable
 import qualified Data.HashMap.Strict as M
 import           Data.Maybe
-import           Data.Monoid
 import           Data.Sequence       (ViewL (..), ViewR (..), (<|), (><), (|>))
 import qualified Data.Sequence       as S
 import           Data.Traversable
-import           Data.Tuple          (swap)
 import           Data.Vector         ((!?))
 import qualified Data.Vector         as V
 import           Statistics.Sample

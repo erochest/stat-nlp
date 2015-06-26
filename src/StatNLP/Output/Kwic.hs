@@ -15,27 +15,18 @@ module StatNLP.Output.Kwic
 
 import           Control.Arrow          ((&&&))
 import           Control.Lens
-import           Control.Monad
 import           Data.Bifunctor
 import           Data.Char
-import           Data.Either
-import qualified Data.FingerTree        as FT
-import           Data.Foldable
 import           Data.Function          (on)
 import qualified Data.HashMap.Strict    as M
 import qualified Data.List              as L
-import           Data.Maybe
-import           Data.Monoid
 import           Data.Ord
-import qualified Data.Sequence          as Seq
 import qualified Data.Text              as T
 import qualified Data.Text.Format       as F
-import qualified Data.Text.Lazy         as TL
 import           Data.Text.Lazy.Builder
 import           System.FilePath
 
 import           StatNLP.Context
-import           StatNLP.Document
 import           StatNLP.Types
 
 

@@ -43,7 +43,7 @@ collocatesC' i j xs =  fmap (\(Collocate a b d) -> Collocate (tread a) (tread b)
             . zipWith token [0..]
             $ fmap show xs
         xs' :: [(Int, VectorDoc b)]
-        xs' = fmap (, doc) [0 .. (length xs) - 1]
+        xs' = fmap (, doc) [0 .. length xs - 1]
         token n t = Token (T.pack t) Nothing n
         tread = read . T.unpack
 
