@@ -10,6 +10,7 @@ module StatNLP.Statistics
     , tTest
     , tTestDifferences
     , likelihoodRatio
+    , log'
     , pointwiseMI
     , pointwiseMI'
     , mle
