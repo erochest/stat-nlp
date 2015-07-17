@@ -6,6 +6,7 @@ module Main where
 
 
 import           Control.Arrow       ((&&&))
+import           Control.DeepSeq
 import           Control.Monad       (forM_)
 import           Data.Foldable
 import qualified Data.HashMap.Strict as M
@@ -44,28 +45,16 @@ start = "*"
 unknown :: T.Text
 unknown = "<UNK>"
 
+dataFile :: FilePath
+dataFile = "/Users/err8n/s/stat-nlp/data/austen-cntcnt.txt"
+
 main :: IO ()
 main = do
-    corpusPath <- parseArgs
-
-    -- stopwords
-    stopwords <-  S.fromList . fmap _tokenNorm . tokenizer
-              <$> TIO.readFile "corpora/stopwords/english"
-
-    F.print "Reading corpus from {}\n" $ F.Only corpusPath
-    corpus <- loadCorpusDirectory tokenizer reader return corpusPath
-    docs   <- readCorpusVectors Nothing corpus
-    F.print "Documents read {}\n" . F.Only . M.size $ _corpusDocuments corpus
-
-    let tokens' = fmap _tokenNorm . _documentTokens <$> M.elems docs
-        freqs'  = foldParMap frequencies tokens'
-        hapax   = hapaxLegomena freqs'
-        tokens  = fmap (replaceFromSet hapax unknown) tokens'
-        freqs   = replaceFreqsFromSet hapax unknown freqs'
-        ngrams  = foldParMap (frequencies . bigramsV) tokens
-
-    putStrLn "r\tr*\tPgt\n"
-    -- mapM_ (F.print "{}\t{}\t{}\n") $ sgt ngrams
+    counts <-  force . MHash . fmap Sum
+           <$> (readHashMap dataFile :: IO (M.HashMap Int Int))
+    let c1 = force . M.toList . uncurry (flip (M.insert 0)) $ sgt  counts 1.96
+        c2 = force . M.toList . uncurry (flip (M.insert 0)) $ sgt' counts 1.96
+    mapM_ (F.print "{}\t{}\n") . L.sortBy (comparing fst) $ c1 ++ c2
 
 tokenizer' :: StopWords -> Tokenizer (Token LinePos PlainToken)
 tokenizer' = tokenizerStop

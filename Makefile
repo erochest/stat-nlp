@@ -32,6 +32,9 @@ profile:
 	stack build --library-profiling --executable-profiling
 	stack exec -- stat-nlp $(CORPUS) $(RUN_FLAGS) > bigrams.txt
 
+benchmark:
+	stack bench
+
 # docs:
 # generate api documentation
 #

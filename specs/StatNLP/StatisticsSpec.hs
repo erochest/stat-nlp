@@ -8,28 +8,16 @@ import qualified Data.HashMap.Strict as M
 import           Data.List.Split
 import           Data.Maybe
 import           Data.Monoid
-import Data.Tuple (swap)
+import           Data.Tuple          (swap)
 
 import           Test.Hspec
-import Test.HUnit
+import           Test.HUnit
 
 import           StatNLP.Specs.Utils
 import           StatNLP.Statistics
 import           StatNLP.Types
+import           StatNLP.Utils
 
-
-readHashMap :: (Eq k, Hashable k, Read k, Read v) => FilePath -> IO (M.HashMap k v)
-readHashMap filename =   M.fromList
-                     .   mapMaybe ( fmap (read `bimap` read)
-                                  . pair
-                                  . splitWhen (== '\t')
-                                  )
-                     .   lines
-                     <$> readFile filename
-
-pair :: [a] -> Maybe (a, a)
-pair [a, b] = Just (a, b)
-pair _      = Nothing
 
 spec :: Spec
 spec = do

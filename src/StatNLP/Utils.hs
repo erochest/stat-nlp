@@ -4,6 +4,8 @@
 module StatNLP.Utils where
 
 
+import Data.Maybe
+import Data.Bifunctor
 import           Control.DeepSeq
 import           Control.Monad
 import           Control.Monad.Par
@@ -68,3 +70,16 @@ fourth (_, _, _, d) = d
 
 lookup' :: (Num n, Eq a, Hashable a) => M.HashMap a (Sum n) -> a -> n
 lookup' m k = getSum $ M.lookupDefault mempty k m
+
+readHashMap :: (Eq k, Hashable k, Read k, Read v) => FilePath -> IO (M.HashMap k v)
+readHashMap filename =   M.fromList
+                     .   mapMaybe ( fmap (read `bimap` read)
+                                  . pair
+                                  . splitWhen (== '\t')
+                                  )
+                     .   lines
+                     <$> readFile filename
+
+pair :: [a] -> Maybe (a, a)
+pair [a, b] = Just (a, b)
+pair _      = Nothing
