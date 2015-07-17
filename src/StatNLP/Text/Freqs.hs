@@ -52,6 +52,7 @@ count m a = MHash . M.insertWith mappend a 1 $ unHash m
 frequencies :: (Eq a, Hashable a, Foldable f) => f a -> FreqMap a
 frequencies = foldl' count mempty
 
+-- | Return frequencies of groups of input.
 frequencyBy :: (Eq k, Hashable k, Eq v, Hashable v, Foldable f)
             => (a -> k) -> (a -> v) -> f a -> MonoidHash k (FreqMap v)
 frequencyBy by value =
@@ -59,6 +60,7 @@ frequencyBy by value =
             . uncurry M.singleton
             . (by &&& (MHash . (`M.singleton` 1) . value)))
 
+-- | Take a frequency map and generate frequencies of subgroups from it.
 groupFreqsBy :: (Ord k, Eq k, Hashable k, Eq v, Hashable v)
              => (a -> k) -> (a -> v) -> FreqMap a -> MonoidHash k (FreqMap v)
 groupFreqsBy key val = fromList
@@ -86,3 +88,7 @@ grandTotal = getSum . fold . M.elems . unHash
 tokenTypeRatio :: FreqMap a -> Double
 tokenTypeRatio fm'@(MHash fm) = fromIntegral (grandTotal fm')
                               / fromIntegral (M.size fm)
+
+-- | Take a freq map and return a freq map of the frequencies.
+countCounts :: FreqMap a -> FreqMap Int
+countCounts = frequencies . fmap getSum . M.elems . unHash

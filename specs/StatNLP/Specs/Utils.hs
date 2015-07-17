@@ -5,6 +5,7 @@ module StatNLP.Specs.Utils where
 
 import qualified Data.Text       as T
 
+import           Test.Hspec
 import           Test.QuickCheck
 
 
@@ -19,3 +20,6 @@ instance Arbitrary Alphabetic where
               .   T.pack
               <$> listOf
               (   elements " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+shouldApproximate :: Double -> Double -> Double -> Expectation
+shouldApproximate z a b = abs (a - b) `shouldSatisfy` (< z)

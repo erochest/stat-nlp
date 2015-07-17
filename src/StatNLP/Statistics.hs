@@ -1,4 +1,5 @@
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RankNTypes    #-}
+{-# LANGUAGE TupleSections #-}
 
 
 module StatNLP.Statistics
@@ -14,15 +15,33 @@ module StatNLP.Statistics
     , pointwiseMI
     , pointwiseMI'
     , mle
+    , sgt
     ) where
 
 
 import           Conduit
+import           Control.Arrow         ((&&&))
+import           Control.Monad
+import           Data.Bifunctor
 import           Data.Foldable
 import           Data.Hashable
-import qualified Data.HashMap.Strict as M
+import qualified Data.HashMap.Strict   as M
+import qualified Data.List             as L
+import           Data.Maybe
+import           Data.Monoid
+import           Data.Ord
+import           Data.Traversable
+import           Data.Vector.Unboxed   ((!), (!?))
+import qualified Data.Vector.Unboxed   as V
+import           Statistics.Matrix     hiding (map)
+import           Statistics.Regression (ols)
+import           Statistics.Sample     (mean)
 
+import           StatNLP.Text.Freqs
 import           StatNLP.Types
+import           StatNLP.Utils
+
+import           Debug.Trace
 
 
 data OnlineSummaryState = OSS
@@ -122,3 +141,90 @@ mle :: Int      -- ^ /C(w1 .. wn)/
     -> Int      -- ^ /C(w1 .. w(n-1))/
     -> Double   -- ^ maximum likelihood estimate
 mle cn cn1 = fromIntegral cn / fromIntegral cn1
+
+-- | Calculate the Simple Good Turing estimator for all frequencies.
+sgt :: FreqMap Int      -- ^ A frequency map to generate generate probs for.
+    -> Double           -- ^ Multiplier of the std dev (1.96 is a good default).
+    -> (M.HashMap Int Double, Double)
+sgt counts@(MHash counts') confLevel = (pmap, pZero)
+    where
+        -- (r, n)
+        rn :: V.Vector (Int, Int)
+        rn = V.fromList
+           . L.sortBy (comparing fst)
+           . fmap (fmap getSum)
+           . M.toList
+           $ unHash counts
+
+        -- roughly, n[row(i)]
+        n :: Int -> Int
+        n = lookup' counts'
+
+        rd :: (Int, Int) -> Double
+        rd = fromIntegral . fst
+
+        logs :: Int -> (Int, Int) -> (Double, Double, Double)
+        logs j (r, n) =
+            let i  = if j == 0 then 0 else fst (rn ! (j - 1))
+                i' = fromIntegral i
+                k  = maybe (2.0 * rd (rn ! j) - i') rd
+                   $ rn !? (j + 1)
+                z  = 2.0 * fromIntegral n / (k - i')
+            in  ( z
+                , log $ fromIntegral r
+                , log z
+                )
+
+        smoothed :: Double -> Double
+        smoothed = exp . (intercept +) . (slope *) . log
+
+        getRstar :: (Bool, Double) -> (Int, (Int, Int)) -> (Bool, Double)
+        getRstar (indiffValsSeen, _) (j, (r, c)) =
+            let rj = rd $ rn ! j
+                r' = fromIntegral r
+                c' = fromIntegral c
+                y  = rj + 1 * smoothed (rj + 1) / smoothed rj
+                indiffValsSeen' = indiffValsSeen || not (M.member (r+1) counts')
+            in  if indiffValsSeen'
+                    then (indiffValsSeen', y)
+                    else let nextN = fromIntegral . n $ r + 1
+                             x = fromIntegral (r + 1) * nextN / fromIntegral c
+                             cutOff = confLevel
+                                    * sqrt((r' + 1.0)^2)
+                                    * nextN
+                                    / ( c'^2 * (1 + nextN / c'))
+                         in  if abs (x - y) <= confLevel * sqrt ((r' + 1.0)^2)
+                                 then (True, y)
+                                 else (indiffValsSeen', x)
+
+        zlrz :: V.Vector (Double, Double, Double)
+        z, logR, logZ, rStar, p :: Vector
+        zlrz  = V.imap logs rn
+        z     = V.map (\(x, _, _) -> x) zlrz
+        logR  = V.map (\(_, x, _) -> x) zlrz
+        logZ  = V.map (\(_, _, x) -> x) zlrz
+        rStar = V.map snd . V.postscanl' getRstar (False, 0.0) $ V.indexed rn
+
+        p     = V.map (\rs -> (1 - pZero) * rs / bigNprime) rStar
+
+        rows, bigN :: Int
+        rows = V.length rn
+        bigN = V.sum $ V.map (uncurry (*)) rn
+
+        pZero, bigNprime, slope, intercept :: Double
+        pZero     = fromIntegral (n 1) / fromIntegral bigN
+        bigNprime = V.sum . V.zipWith (*) rStar $ V.map (fromIntegral . snd) rn
+
+        -- findBestFit
+        (slope, intercept) =
+            let meanX = mean logR
+                meanY = mean logZ
+                rdiff = V.map (\z -> z - meanX) logR
+                xys   = V.sum
+                      . V.zipWith (*) rdiff
+                      $ V.map (\z -> z - meanY) logZ
+                xsq   = V.sum $ V.map (^2) rdiff
+            in  (xys / xsq, meanY - slope * meanX)
+
+        pmap :: M.HashMap Int Double
+        pmap = M.fromList . V.toList $ V.zipWith ((,) . fst) rn p

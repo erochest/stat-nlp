@@ -72,8 +72,8 @@ stat-nlp.ps: stat-nlp.hp
 build:
 	stack build
 
-watch:
-	ghcid
+watch: build
+	ghcid "--command=stack ghci"
 
 restart: distclean build
 

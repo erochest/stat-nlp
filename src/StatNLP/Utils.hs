@@ -8,8 +8,11 @@ import           Control.DeepSeq
 import           Control.Monad
 import           Control.Monad.Par
 import           Data.Foldable
+import           Data.Hashable
+import qualified Data.HashMap.Strict as M
 import           Data.List.Split
-import qualified Data.Text.Format  as F
+import           Data.Monoid
+import qualified Data.Text.Format    as F
 import           Data.Time
 import           System.Directory
 import           System.FilePath
@@ -62,3 +65,6 @@ third (_, _, c) = c
 
 fourth :: (a, b, c, d) -> d
 fourth (_, _, _, d) = d
+
+lookup' :: (Num n, Eq a, Hashable a) => M.HashMap a (Sum n) -> a -> n
+lookup' m k = getSum $ M.lookupDefault mempty k m

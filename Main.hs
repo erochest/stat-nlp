@@ -5,9 +5,13 @@
 module Main where
 
 
+import           Control.Arrow       ((&&&))
+import           Control.Monad       (forM_)
+import           Data.Foldable
 import qualified Data.HashMap.Strict as M
 import qualified Data.HashSet        as S
 import qualified Data.List           as L
+import           Data.Monoid
 import           Data.Ord
 import qualified Data.Text           as T
 import qualified Data.Text.Format    as F
@@ -17,6 +21,7 @@ import           Debug.Trace
 
 import           StatNLP.Corpus
 import           StatNLP.Input
+import           StatNLP.Statistics
 import           StatNLP.Text.Freqs
 import           StatNLP.Text.Tokens
 import           StatNLP.Text.Utils
@@ -58,9 +63,9 @@ main = do
         tokens  = fmap (replaceFromSet hapax unknown) tokens'
         freqs   = replaceFreqsFromSet hapax unknown freqs'
         ngrams  = foldParMap (frequencies . bigramsV) tokens
-    mapM_ (F.print "{}\t{}\t{}\t{}\n")
-        . L.sortBy (comparing sortOn)
-        $ mleMatrixList freqs ngrams
+
+    putStrLn "r\tr*\tPgt\n"
+    -- mapM_ (F.print "{}\t{}\t{}\n") $ sgt ngrams
 
 tokenizer' :: StopWords -> Tokenizer (Token LinePos PlainToken)
 tokenizer' = tokenizerStop

@@ -142,9 +142,6 @@ tDifferenceMatrixList freqs a =
                            | a == c    = Just b
                            | otherwise = Nothing
 
-lookup' :: (Eq a, Hashable a) => M.HashMap a (Sum Int) -> a -> Int
-lookup' m k = getSum $ M.lookupDefault mempty k m
-
 likelihoodMatrixList :: (Eq a, Hashable a, NFData a)
                      => FreqMap a
                      -> FreqMap (a, a)
