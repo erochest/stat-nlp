@@ -16,6 +16,7 @@ module StatNLP.Statistics
     , pointwiseMI'
     , mle
     , sgt
+    , absDiscounting
     ) where
 
 
@@ -235,3 +236,16 @@ sgt counts@(MHash counts') confLevel = (pmap, pZero)
         pmap :: M.HashMap Int (Double, Double)
         pmap = M.fromList . V.toList $ V.zipWith3 pmapf rn rStar p
         pmapf (a, _) b c = (a, (b, c))
+
+-- | This is just here for kicks. I haven't actually tested it.
+absDiscounting :: FreqMap Int -> Double -> Int -> Int -> Double
+absDiscounting (MHash freqs) theta bins r =
+    case r of
+        0 -> (fromIntegral bins - n0) * theta / (n0 * bigN)
+        _ -> (fromIntegral r - theta) / bigN
+    where
+        n0   = fromIntegral . getSum $ M.lookupDefault 0 1 freqs
+        bigN = fromIntegral
+             . foldl' (+) 0
+             . fmap (uncurry (*) . fmap getSum)
+             $ M.toList freqs
