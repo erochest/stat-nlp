@@ -20,6 +20,6 @@ main = do
     counts <-  force . MHash . fmap Sum
            <$> (readHashMap dataFile :: IO (M.HashMap Int Int))
     defaultMain [ bgroup "sgt" [ bench "sgt"  $ nf (sgt  counts) 1.96
-                               , bench "sgt'" $ nf (sgt' counts) 1.96
+                               -- , bench "sgt'" $ nf (sgt' counts) 1.96
                                ]
                 ]

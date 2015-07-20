@@ -35,6 +35,12 @@ profile:
 benchmark:
 	stack bench
 
+sgt.out: sgt
+	./sgt < data/austen-cntcnt.txt > sgt.out
+
+sgt: SGT.c
+	gcc -o sgt SGT.c
+
 # docs:
 # generate api documentation
 #

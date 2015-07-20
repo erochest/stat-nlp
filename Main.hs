@@ -1,5 +1,6 @@
 {-# LANGUAGE NamedFieldPuns    #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections     #-}
 
 
 module Main where
@@ -52,9 +53,14 @@ main :: IO ()
 main = do
     counts <-  force . MHash . fmap Sum
            <$> (readHashMap dataFile :: IO (M.HashMap Int Int))
-    let c1 = force . M.toList . uncurry (flip (M.insert 0)) $ sgt  counts 1.96
-        c2 = force . M.toList . uncurry (flip (M.insert 0)) $ sgt' counts 1.96
-    mapM_ (F.print "{}\t{}\n") . L.sortBy (comparing fst) $ c1 ++ c2
+    let -- c1 = force . M.toList . uncurry (flip (M.insert 0)) $ sgt  counts 1.96
+        c1 = []
+        c2 = force
+           . M.toList
+           . uncurry (flip (M.insert 0))
+           . fmap (0,)
+           $ sgt counts 1.96
+    mapM_ (F.print "{}\t{}\t{}\n" . flatten) . L.sortBy (comparing fst) $ c1 ++ c2
 
 tokenizer' :: StopWords -> Tokenizer (Token LinePos PlainToken)
 tokenizer' = tokenizerStop
@@ -69,5 +75,5 @@ sortOn :: (a, b, c, d) -> (a, Down c, b)
 sortOn (a, b, c, _) = (a, Down c, b)
 
 
-flatten :: (((a, b), (c, d)), e, f) -> (a, b, c, d, e, f)
-flatten (((a, b), (c, d)), e, f) = (a, b, c, d, e, f)
+flatten :: (a, (b, c)) -> (a, b, c)
+flatten (a, (b, c)) = (a, b, c)

@@ -16,7 +16,6 @@ module StatNLP.Statistics
     , pointwiseMI'
     , mle
     , sgt
-    , sgt'
     ) where
 
 
@@ -41,8 +40,6 @@ import           Statistics.Sample     (mean)
 import           StatNLP.Text.Freqs
 import           StatNLP.Types
 import           StatNLP.Utils
-
-import           Debug.Trace
 
 
 data OnlineSummaryState = OSS
@@ -146,95 +143,10 @@ mle cn cn1 = fromIntegral cn / fromIntegral cn1
 -- | Calculate the Simple Good Turing estimator for all frequencies.
 sgt :: FreqMap Int      -- ^ A frequency map to generate generate probs for.
     -> Double           -- ^ Multiplier of the std dev (1.96 is a good default).
-    -> (M.HashMap Int Double, Double)
+    -> (M.HashMap Int (Double, Double), Double)
+                        -- ^ This maps from the count (R) to (R*, Psg). The
+                        -- second item is p0.
 sgt counts@(MHash counts') confLevel = (pmap, pZero)
-    where
-        -- (r, n)
-        rn :: V.Vector (Int, Int)
-        rn = V.fromList
-           . L.sortBy (comparing fst)
-           . fmap (fmap getSum)
-           . M.toList
-           $ unHash counts
-
-        -- roughly, n[row(i)]
-        n :: Int -> Int
-        n = lookup' counts'
-
-        rd :: (Int, Int) -> Double
-        rd = fromIntegral . fst
-
-        logs :: Int -> (Int, Int) -> (Double, Double, Double)
-        logs j (r, n) =
-            let i  = if j == 0 then 0 else fst (rn ! (j - 1))
-                i' = fromIntegral i
-                k  = maybe (2.0 * rd (rn ! j) - i') rd
-                   $ rn !? (j + 1)
-                z  = 2.0 * fromIntegral n / (k - i')
-            in  ( z
-                , log $ fromIntegral r
-                , log z
-                )
-
-        smoothed :: Double -> Double
-        smoothed = exp . (intercept +) . (slope *) . log
-
-        getRstar :: (Bool, Double) -> (Int, (Int, Int)) -> (Bool, Double)
-        getRstar (indiffValsSeen, _) (j, (r, c)) =
-            let rj = rd $ rn ! j
-                r' = fromIntegral r
-                c' = fromIntegral c
-                y  = rj + 1 * smoothed (rj + 1) / smoothed rj
-                indiffValsSeen' = indiffValsSeen || not (M.member (r+1) counts')
-            in  if indiffValsSeen'
-                    then (indiffValsSeen', y)
-                    else let nextN = fromIntegral . n $ r + 1
-                             x = fromIntegral (r + 1) * nextN / fromIntegral c
-                             cutOff = confLevel
-                                    * sqrt((r' + 1.0)^2)
-                                    * nextN
-                                    / ( c'^2 * (1 + nextN / c'))
-                         in  if abs (x - y) <= confLevel * sqrt ((r' + 1.0)^2)
-                                 then (True, y)
-                                 else (indiffValsSeen', x)
-
-        zlrz :: V.Vector (Double, Double, Double)
-        z, logR, logZ, rStar, p :: Vector
-        zlrz  = V.imap logs rn
-        z     = V.map (\(x, _, _) -> x) zlrz
-        logR  = V.map (\(_, x, _) -> x) zlrz
-        logZ  = V.map (\(_, _, x) -> x) zlrz
-        rStar = V.map snd . V.postscanl' getRstar (False, 0.0) $ V.indexed rn
-
-        p     = V.map (\rs -> (1 - pZero) * rs / bigNprime) rStar
-
-        rows, bigN :: Int
-        rows = V.length rn
-        bigN = V.sum $ V.map (uncurry (*)) rn
-
-        pZero, bigNprime, slope, intercept :: Double
-        pZero     = fromIntegral (n 1) / fromIntegral bigN
-        bigNprime = V.sum . V.zipWith (*) rStar $ V.map (fromIntegral . snd) rn
-
-        -- findBestFit
-        (slope, intercept) =
-            let meanX = mean logR
-                meanY = mean logZ
-                rdiff = V.map (\z -> z - meanX) logR
-                xys   = V.sum
-                      . V.zipWith (*) rdiff
-                      $ V.map (\z -> z - meanY) logZ
-                xsq   = V.sum $ V.map (^2) rdiff
-            in  (xys / xsq, meanY - slope * meanX)
-
-        pmap :: M.HashMap Int Double
-        pmap = M.fromList . V.toList $ V.zipWith ((,) . fst) rn p
-
--- | Calculate the Simple Good Turing estimator for all frequencies.
-sgt' :: FreqMap Int      -- ^ A frequency map to generate generate probs for.
-     -> Double           -- ^ Multiplier of the std dev (1.96 is a good default).
-     -> (M.HashMap Int Double, Double)
-sgt' counts@(MHash counts') confLevel = (pmap, pZero)
     where
         -- (r, n)
         rn :: V.Vector (Int, Int)
@@ -266,18 +178,28 @@ sgt' counts@(MHash counts') confLevel = (pmap, pZero)
         smoothed :: Double -> Double
         smoothed = exp . (intercept +) . (slope *) . log
 
-        getRstar :: (Bool, Double) -> (Int, (Int, Int)) -> (Bool, Double)
-        getRstar (indiffValsSeen, _) (j, (r, c))
-            | indiffValsSeen' = (indiffValsSeen', y)
-            | abs (x - y) <= confLevel * sqrt ((r' + 1.0)^2) = (True, y)
-            | otherwise = (indiffValsSeen', x)
+        getRstar :: (Bool, Double) -> (Int, Int) -> (Bool, Double)
+        getRstar (indiffValsSeen, _) (r, c) = cond1 $ cond0 indiffValsSeen'
             where
-                r' = fromIntegral r
-                c' = fromIntegral c
-                y  = r' + 1 * smoothed (r' + 1) / smoothed r'
-                indiffValsSeen' = indiffValsSeen || not (M.member (r+1) counts')
-                nextN = fromIntegral . n $ r + 1
-                x = fromIntegral (r + 1) * nextN / fromIntegral c
+                indiffValsSeen' = if not (M.member (r+1) counts')
+                                      then True
+                                      else indiffValsSeen
+
+                cond0 True  = (True, 0)
+                cond0 False = cond0a $ abs (x - y) <= cutOff
+
+                cond0a True  = (True , 0)
+                cond0a False = (False, x)
+
+                cond1 (True, _) = (True, y)
+                cond1 x         = x
+
+                r'     = fromIntegral r
+                c'     = fromIntegral c
+
+                x      = fromIntegral (r + 1) * nextN / fromIntegral c
+                y      = (r' + 1) * smoothed (r' + 1) / smoothed r'
+                nextN  = fromIntegral . n $ r + 1
                 cutOff = confLevel
                        * sqrt((r' + 1.0)^2)
                        * nextN
@@ -288,12 +210,11 @@ sgt' counts@(MHash counts') confLevel = (pmap, pZero)
         zlrz  = V.imap logs rn
         logR  = V.map (\(_, x, _) -> x) zlrz
         logZ  = V.map (\(_, _, x) -> x) zlrz
-        rStar = V.map snd . V.postscanl' getRstar (False, 0.0) $ V.indexed rn
+        rStar = V.map snd $ V.postscanl' getRstar (False, 0.0) rn
 
         p     = V.map (\rs -> (1 - pZero) * rs / bigNprime) rStar
 
-        rows, bigN :: Int
-        rows = V.length rn
+        bigN :: Int
         bigN = V.sum $ V.map (uncurry (*)) rn
 
         pZero, bigNprime, slope, intercept :: Double
@@ -311,5 +232,6 @@ sgt' counts@(MHash counts') confLevel = (pmap, pZero)
                 xsq   = V.sum $ V.map (^2) rdiff
             in  (xys / xsq, meanY - slope * meanX)
 
-        pmap :: M.HashMap Int Double
-        pmap = M.fromList . V.toList $ V.zipWith ((,) . fst) rn p
+        pmap :: M.HashMap Int (Double, Double)
+        pmap = M.fromList . V.toList $ V.zipWith3 pmapf rn rStar p
+        pmapf (a, _) b c = (a, (b, c))
