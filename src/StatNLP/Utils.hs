@@ -4,15 +4,15 @@
 module StatNLP.Utils where
 
 
-import Data.Maybe
-import Data.Bifunctor
 import           Control.DeepSeq
 import           Control.Monad
 import           Control.Monad.Par
+import           Data.Bifunctor
 import           Data.Foldable
 import           Data.Hashable
 import qualified Data.HashMap.Strict as M
 import           Data.List.Split
+import           Data.Maybe
 import           Data.Monoid
 import qualified Data.Text.Format    as F
 import           Data.Time

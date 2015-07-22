@@ -92,3 +92,9 @@ tokenTypeRatio fm'@(MHash fm) = fromIntegral (grandTotal fm')
 -- | Take a freq map and return a freq map of the frequencies.
 countCounts :: FreqMap a -> FreqMap Int
 countCounts = frequencies . fmap getSum . M.elems . unHash
+
+probabilities :: FreqMap a -> M.HashMap a Double
+probabilities (MHash fq) =
+    (/ n) . fromIntegral . getSum <$> fq
+    where
+        n = fromIntegral . getSum . fold $ M.elems fq

@@ -7,6 +7,7 @@ module StatNLP.Text.Utils where
 import           Conduit
 import           Control.Arrow
 import           Control.Monad.Par
+import           Data.Bifunctor
 import           Data.Hashable
 import qualified Data.HashMap.Strict as M
 import qualified Data.List           as L
@@ -209,3 +210,42 @@ matrixList f freqs =
 vectorPair :: V.Vector a -> Maybe (a, a)
 vectorPair v | V.length v >= 2 = Just (v V.! 0, v V.! 1)
              | otherwise       = Nothing
+
+-- | This builds unigram, bigram, and trigram models from a single input
+-- stream. It should be relatively efficient.
+nGramModels :: (Hashable a, Eq a)
+            => [a]
+            -> (FreqMap a, M.HashMap a (FreqMap a), M.HashMap (a, a) (FreqMap a))
+nGramModels = (unHash `bimap` unHash)
+            . L.foldl' step (mempty, mempty, mempty)
+            . map (L.take 3 . L.tail . L.inits)
+            . L.tails
+    where
+        step (uni, MHash bi, MHash tri) [[u], [b0, b1], [t0, t1, t2]] =
+            ( count uni u
+            , MHash $ M.insertWith mappend b0       (MHash $ M.singleton b1 1) bi
+            , MHash $ M.insertWith mappend (t0, t1) (MHash $ M.singleton t2 1) tri
+            )
+        step freqs _ = freqs
+
+-- | This performs deleted interpolation. If you use currying to store the
+-- function returned after the list of items, it caches the n-gram models.
+ngramInterpolation :: (Hashable a, Eq a)
+                   => (Double, Double, Double)
+                   -- ^ Weightings. These can be determined manually, but
+                   -- it's probably better to use expectation
+                   -- maximization.
+                   -> [a]
+                   -- ^ The input list of items.
+                   -> (a, a, a)
+                   -- ^ The items to determine the probability for. The
+                   -- items in the tuple are in order @(W1, W2, W3)@.
+                   -> Double
+ngramInterpolation (l1, l2, l3) xs =
+    let (p1, p2, p3) = probs $ nGramModels xs
+    in  \(w1, w2, w3) -> l1 * (M.lookupDefault 0.0 w3 p1)
+                      +  l2 * (lookupDefault p2 w2 w3)
+                      +  l3 * (lookupDefault p3 (w1, w2) w3)
+    where
+        probs (u, b, t) = (probabilities u, probabilities <$> b, probabilities <$> t)
+        lookupDefault m k0 k1 = fromMaybe 0.0 $ M.lookup k1 =<< M.lookup k0 m
