@@ -123,6 +123,7 @@ instance (Hashable k, Eq k, Monoid v) => Monoid (MonoidHash k v) where
     mappend (MHash a) (MHash b) = MHash $ M.unionWith mappend a b
 
 type FreqMap a  = MonoidHash a (Sum Int)
+-- TODO: Should ProbMap be a newtype to protect the sum of the values?
 type DocumentId = FilePath
 type Tag        = T.Text
 type Cache a    = M.HashMap a a
