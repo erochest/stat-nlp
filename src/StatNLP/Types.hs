@@ -6,6 +6,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedLists            #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
 
@@ -18,6 +19,8 @@ module StatNLP.Types
 
     , Cache
     , DocumentId
+
+    , ProbabilityDist(..)
 
     , Document(..)
     , documentId
@@ -92,24 +95,31 @@ module StatNLP.Types
     ) where
 
 
+import           Control.Arrow                    ((&&&))
 import           Control.DeepSeq
-import           Control.Lens          hiding (Context)
-import           Data.BloomFilter      (Bloom)
-import qualified Data.BloomFilter.Hash as H
-import qualified Data.FingerTree       as FT
+import           Control.Lens                     hiding (Context)
+import           Control.Monad.Primitive
+import           Data.BloomFilter                 (Bloom)
+import qualified Data.BloomFilter.Hash            as H
+import qualified Data.FingerTree                  as FT
 import           Data.Foldable
 import           Data.Hashable
-import qualified Data.HashMap.Strict   as M
-import qualified Data.HashSet          as S
+import qualified Data.HashMap.Strict              as M
+import qualified Data.HashSet                     as S
 import           Data.Monoid
 import           Data.MonoTraversable
-import           Data.Sequence         (Seq)
-import qualified Data.Text             as T
-import           Data.Text.Encoding    (encodeUtf8)
-import qualified Data.Vector           as V
+import           Data.Sequence                    (Seq)
+import qualified Data.Text                        as T
+import           Data.Text.Encoding               (encodeUtf8)
+import qualified Data.Vector                      as V
+import qualified Data.Vector.Generic              as GV
 import           GHC.Exts
 import           GHC.Generics
-import           Taygeta.Types         (PlainToken, PlainTokenizer, Tokenizer)
+import           GHC.Word                         (Word32)
+import           System.Random.MWC
+import           System.Random.MWC.CondensedTable
+import           Taygeta.Types                    (PlainToken, PlainTokenizer,
+                                                   Tokenizer)
 
 
 newtype MonoidHash a p = MHash { unHash :: M.HashMap a p }
@@ -127,6 +137,45 @@ type FreqMap a  = MonoidHash a (Sum Int)
 type DocumentId = FilePath
 type Tag        = T.Text
 type Cache a    = M.HashMap a a
+
+class ProbabilityDist d s where
+        -- | Return the probability [0.0-1.0] for @o@.
+        probability :: d -> s -> Double
+
+        -- | Return the log probability, if @probability@ doesn't return 0.
+        logProbability :: d -> s -> Maybe Double
+
+        -- | Return the sample with the maximum probability.
+        maxProbability :: d -> Maybe s
+
+        -- | Return all samples with >0 probability.
+        samples :: d -> [s]
+
+        -- | Return the ratio by which counts are discounted on average.
+        discount :: d -> Double
+
+        -- | Return a randomly selected item from this distribution.
+        generate :: PrimMonad m => d -> Gen (PrimState m) -> m s
+
+        -- | Create a condensed look-up table for this distribution.
+        table :: ( GV.Vector v (s, Double)
+                 , GV.Vector v (s, Word32)
+                 , GV.Vector v s
+                 , GV.Vector v Double
+                 , GV.Vector v Word32)
+              => d -> CondensedTable v s
+
+        logProbability d o = let p = probability d o
+                             in  if p == 0 then Nothing else Just (logBase p 2)
+        discount _ = 0.0
+        table d = tableFromProbabilities
+                . GV.fromList
+                . fmap (id &&& probability d)
+                $ samples d
+        generate d g = genFromTable t g
+            where
+                t :: CondensedTableV s
+                t = table d
 
 data Document b ts = Document
                    { _documentId     :: !DocumentId
