@@ -18,6 +18,8 @@ cabal-version:       >=1.10
 library
   exposed-modules:     StatNLP.Context
                      , StatNLP.Corpus
+                     , StatNLP.Distributions.Map
+                     , StatNLP.Distributions.Uniform
                      , StatNLP.Document
                      , StatNLP.Input
                      , StatNLP.Output
@@ -27,7 +29,6 @@ library
                      , StatNLP.Text.Collocates
                      , StatNLP.Text.Freqs
                      , StatNLP.Text.Index
-                     , StatNLP.Text.Probs
                      , StatNLP.Text.Tokens
                      , StatNLP.Text.Utils
                      , StatNLP.Types

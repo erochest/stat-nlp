@@ -5,13 +5,14 @@
 {-# LANGUAGE TupleSections         #-}
 
 
-module StatNLP.Text.Probs
+module StatNLP.Distributions.Uniform
     ( UniformDist
     , uniformDist
     , uniformDistFromSet
     , insert
     , size
     , singleton
+    , merge
     ) where
 
 
