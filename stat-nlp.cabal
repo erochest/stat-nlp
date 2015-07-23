@@ -27,6 +27,7 @@ library
                      , StatNLP.Text.Collocates
                      , StatNLP.Text.Freqs
                      , StatNLP.Text.Index
+                     , StatNLP.Text.Probs
                      , StatNLP.Text.Tokens
                      , StatNLP.Text.Utils
                      , StatNLP.Types
@@ -56,6 +57,7 @@ library
                      , mtl
                      , mwc-random
                      , primitive
+                     , semigroups
                      , split
                      , statistics
                      , taygeta
