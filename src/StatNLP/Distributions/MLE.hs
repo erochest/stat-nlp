@@ -21,7 +21,6 @@ import qualified Data.List                        as L
 import           Data.List.NonEmpty               hiding (insert)
 import           Data.Ord
 import           Data.Semigroup
-import           Data.Semigroup
 import           Data.Typeable
 import qualified Data.Vector.Generic              as GV
 import           GHC.Generics

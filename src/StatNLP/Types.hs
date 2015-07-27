@@ -106,8 +106,11 @@ import           Data.Foldable
 import           Data.Hashable
 import qualified Data.HashMap.Strict              as M
 import qualified Data.HashSet                     as S
+import qualified Data.List                        as L
+import           Data.Maybe
 import           Data.Monoid
 import           Data.MonoTraversable
+import           Data.Ord
 import           Data.Sequence                    (Seq)
 import qualified Data.Text                        as T
 import           Data.Text.Encoding               (encodeUtf8)
@@ -167,11 +170,22 @@ class ProbabilityDist d s where
 
         logProbability d o = let p = probability d o
                              in  if p == 0 then Nothing else Just (logBase p 2)
+
+        maxProbability d =
+            case samples d of
+                [] -> Nothing
+                xs -> Just
+                   .  fst
+                   .  L.maximumBy (comparing snd)
+                   $  fmap (id &&& probability d) xs
+
         discount _ = 0.0
+
         table d = tableFromProbabilities
                 . GV.fromList
                 . fmap (id &&& probability d)
                 $ samples d
+
         generate d g = genFromTable t g
             where
                 t :: CondensedTableV s
