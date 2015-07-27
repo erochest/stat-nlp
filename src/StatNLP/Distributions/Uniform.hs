@@ -41,9 +41,9 @@ import           StatNLP.Types
 
 data UniformDist s
         = UniformDist
-        { uniformSet     :: S.HashSet s
-        , uniformProb    :: Double
-        , uniformSamples :: V.Vector s
+        { uniformSet     :: !(S.HashSet s)
+        , uniformProb    :: !Double
+        , uniformSamples :: !(V.Vector s)
         } deriving (Show, Data, Typeable, Generic)
 
 uniformDist :: (Foldable t, Eq s, Hashable s) => t s -> Maybe (UniformDist s)

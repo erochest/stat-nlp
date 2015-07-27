@@ -31,7 +31,7 @@ import           StatNLP.Types
 
 data MapProbDist s
         = MapProbDist
-        { mapProb :: M.HashMap s Double
+        { mapProb :: !(M.HashMap s Double)
         } deriving (Show, Data, Typeable, Generic)
 
 mapProbDist :: M.HashMap s Double -> MapProbDist s
