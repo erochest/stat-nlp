@@ -215,9 +215,8 @@ vectorPair v | V.length v >= 2 = Just (v V.! 0, v V.! 1)
 -- stream. It should be relatively efficient.
 nGramModels :: (Hashable a, Eq a)
             => [a]
-            -> (FreqMap a, M.HashMap a (FreqMap a), M.HashMap (a, a) (FreqMap a))
-nGramModels = (unHash `bimap` unHash)
-            . L.foldl' step (mempty, mempty, mempty)
+            -> (FreqMap a, ConditionalFreq a a, ConditionalFreq (a, a) a)
+nGramModels = L.foldl' step (mempty, mempty, mempty)
             . map (L.take 3 . L.tail . L.inits)
             . L.tails
     where
@@ -247,5 +246,6 @@ ngramInterpolation (l1, l2, l3) xs =
                       +  l2 * (lookupDefault p2 w2 w3)
                       +  l3 * (lookupDefault p3 (w1, w2) w3)
     where
-        probs (u, b, t) = (probabilities u, probabilities <$> b, probabilities <$> t)
+        probs (u, MHash b, MHash t) =
+            (probabilities u, probabilities <$> b, probabilities <$> t)
         lookupDefault m k0 k1 = fromMaybe 0.0 $ M.lookup k1 =<< M.lookup k0 m
