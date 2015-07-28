@@ -56,16 +56,19 @@ frequencies :: (Eq a, Hashable a, Foldable f) => f a -> FreqMap a
 frequencies = foldl' count mempty
 
 -- | Return frequencies of groups of input.
-frequencyBy :: (Eq k, Hashable k, Eq v, Hashable v, Foldable f)
-            => (a -> k) -> (a -> v) -> f a -> MonoidHash k (FreqMap v)
-frequencyBy by value =
+conditionalFreqs :: (Eq k, Hashable k, Eq v, Hashable v, Foldable f)
+                 => (a -> k) -> (a -> v) -> f a -> ConditionalFreq k v
+conditionalFreqs by value =
     foldMap ( MHash
             . uncurry M.singleton
             . (by &&& (MHash . (`M.singleton` 1) . value)))
 
+conditions :: ConditionalFreq k v -> [k]
+conditions = M.keys . unHash
+
 -- | Take a frequency map and generate frequencies of subgroups from it.
 groupFreqsBy :: (Ord k, Eq k, Hashable k, Eq v, Hashable v)
-             => (a -> k) -> (a -> v) -> FreqMap a -> MonoidHash k (FreqMap v)
+             => (a -> k) -> (a -> v) -> FreqMap a -> ConditionalFreq k v
 groupFreqsBy key val = fromList
                      . mapMaybe ( bisequenceA
                                 . (getFirst `bimap` (Just . fromList))
@@ -87,6 +90,11 @@ frequenciesC = foldlC count mempty
 
 grandTotal :: FreqMap a -> Int
 grandTotal = getSum . fold . M.elems . unHash
+
+conditionalTotal :: ConditionalFreq a b -> Int
+conditionalTotal = getSum . mconcat . foldMap freqElems . freqElems
+    where
+        freqElems = M.elems . unHash
 
 -- | Return the number of bins (sample values) with counts.
 bins :: FreqMap a -> Int
@@ -139,3 +147,7 @@ probabilities (MHash fq) =
     (/ n) . fromIntegral . getSum <$> fq
     where
         n = fromIntegral . getSum . fold $ M.elems fq
+
+lookupCond :: (Eq a, Hashable a, Eq b, Hashable b)
+           => ConditionalFreq a b -> a -> b -> Int
+lookupCond (MHash cm) a b = getSum . fold $ M.lookup b . unHash =<< M.lookup a cm

@@ -54,6 +54,7 @@ module StatNLP.Types
     , PlainTokenizer
     , Tokenizer
     , FreqMap
+    , ConditionalFreq
     , Tag
 
     , Token(..)
@@ -135,11 +136,11 @@ instance (Hashable k, Eq k, Monoid v) => Monoid (MonoidHash k v) where
     mempty = MHash mempty
     mappend (MHash a) (MHash b) = MHash $ M.unionWith mappend a b
 
-type FreqMap a  = MonoidHash a (Sum Int)
--- TODO: Should ProbMap be a newtype to protect the sum of the values?
-type DocumentId = FilePath
-type Tag        = T.Text
-type Cache a    = M.HashMap a a
+type FreqMap a           = MonoidHash a (Sum Int)
+type ConditionalFreq a b = MonoidHash a (FreqMap b)
+type DocumentId          = FilePath
+type Tag                 = T.Text
+type Cache a             = M.HashMap a a
 
 class ProbabilityDist d s where
         -- | Return the probability [0.0-1.0] for @o@.
