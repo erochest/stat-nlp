@@ -53,8 +53,10 @@ instance (Eq a, Hashable a) => Semigroup (MapProbDist a) where
     times1p 1 a = a
     times1p n a = a <> times1p (n - 1) a
 
-instance (Eq s, Hashable s) => ProbabilityDist (MapProbDist s) s where
+instance (Eq s, Hashable s) => Probabilistic (MapProbDist s) s where
     probability (MapProbDist d) o = M.lookupDefault 0.0 o d
+
+instance (Eq s, Hashable s) => ProbabilityDist (MapProbDist s) s where
     maxProbability (MapProbDist d) =
         case M.toList d of
             [] -> Nothing

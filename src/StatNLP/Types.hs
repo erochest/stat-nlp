@@ -21,6 +21,7 @@ module StatNLP.Types
     , DocumentId
 
     , ProbabilityDist(..)
+    , Probabilistic(..)
 
     , Document(..)
     , documentId
@@ -142,13 +143,17 @@ type DocumentId          = FilePath
 type Tag                 = T.Text
 type Cache a             = M.HashMap a a
 
-class ProbabilityDist d s where
+class Probabilistic d s where
         -- | Return the probability [0.0-1.0] for @o@.
         probability :: d -> s -> Double
 
         -- | Return the log probability, if @probability@ doesn't return 0.
         logProbability :: d -> s -> Maybe Double
 
+        logProbability d o = let p = probability d o
+                             in  if p == 0 then Nothing else Just (logBase p 2)
+
+class Probabilistic d s => ProbabilityDist d s where
         -- | Return the sample with the maximum probability.
         maxProbability :: d -> Maybe s
 
@@ -168,9 +173,6 @@ class ProbabilityDist d s where
                  , GV.Vector v Double
                  , GV.Vector v Word32)
               => d -> CondensedTable v s
-
-        logProbability d o = let p = probability d o
-                             in  if p == 0 then Nothing else Just (logBase p 2)
 
         maxProbability d =
             case samples d of

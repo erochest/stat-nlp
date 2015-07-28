@@ -52,10 +52,11 @@ instance (Eq s, Hashable s) => Semigroup (SGTDist s) where
     times1p 1 a = a
     times1p n a = a <> times1p (n - 1) a
 
-instance (Eq s, Hashable s) => ProbabilityDist (SGTDist s) s where
+instance (Eq s, Hashable s) => Probabilistic (SGTDist s) s where
         probability (SGTDist (MHash fqs) _ p) s =
             snd $ lookupP p (lookup' fqs s)
 
+instance (Eq s, Hashable s) => ProbabilityDist (SGTDist s) s where
         maxProbability (SGTDist (MHash fqs) _ p) =
             case M.toList fqs of
                 [] -> Nothing

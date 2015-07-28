@@ -82,9 +82,11 @@ instance (Eq a, Hashable a) => Semigroup (UniformDist a) where
     times1p 1 a = a
     times1p n a = a <> times1p (n - 1) a
 
-instance (Eq s, Hashable s) => ProbabilityDist (UniformDist s) s where
+instance (Eq s, Hashable s) => Probabilistic (UniformDist s) s where
         probability d _    = uniformProb d
         logProbability d _ = Just . (`logBase` 2) $ uniformProb d
+
+instance (Eq s, Hashable s) => ProbabilityDist (UniformDist s) s where
         maxProbability d   = uniformSamples d !? 0
         samples            = V.toList . uniformSamples
         generate d gen     = let xs = uniformSamples d

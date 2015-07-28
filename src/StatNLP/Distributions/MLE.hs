@@ -62,9 +62,10 @@ instance (Eq a, Hashable a, Eq b, Hashable b) => Semigroup (MLEDist a b) where
     times1p 1 a = a
     times1p n a = a <> times1p (n - 1) a
 
-instance (Eq s, Hashable s) => ProbabilityDist (MLEDist s t) s where
+instance (Eq s, Hashable s) => Probabilistic (MLEDist s t) s where
     probability (MLEDist _ fqs _) s = ML.lookupDefault 0.0 s fqs
 
+instance (Eq s, Hashable s) => ProbabilityDist (MLEDist s t) s where
     maxProbability (MLEDist _ fq _) =
         case ML.toList fq of
             [] -> Nothing
