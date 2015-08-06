@@ -52,11 +52,11 @@ spec = do
                 . foldMap (fold . M.elems . unHash)
                 . M.elems
                 . unHash
-                $ conditionalFreq fst snd xs) == length xs
+                $ conditionalFreqs fst snd xs) == length xs
         it "should have the sum of its group frequencies equal to its group totals." $
             property $ \(xs :: [(Char, Int)]) ->
                 let charf  = unHash . frequencies $ map fst xs
-                    groupf = unHash $ conditionalFreq fst snd xs
+                    groupf = unHash $ conditionalFreqs fst snd xs
                     groupSum (k, ex) = ex == ( fold
                                              . M.elems
                                              . unHash
@@ -79,7 +79,7 @@ spec = do
                            . L.sortBy (comparing fst)
                            . M.toList
                            . unHash
-                           $ conditionalFreq fst snd input
+                           $ conditionalFreqs fst snd input
                            )
 
     describe "ngrams" $ do

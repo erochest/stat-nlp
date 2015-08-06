@@ -20,6 +20,9 @@ module StatNLP.Types
     , Cache
     , DocumentId
 
+    , Frequencies(..)
+    , ProbMap
+    , ConditionalProbMap
     , ProbabilityDist(..)
     , Probabilistic(..)
 
@@ -137,11 +140,13 @@ instance (Hashable k, Eq k, Monoid v) => Monoid (MonoidHash k v) where
     mempty = MHash mempty
     mappend (MHash a) (MHash b) = MHash $ M.unionWith mappend a b
 
-type FreqMap a           = MonoidHash a (Sum Int)
-type ConditionalFreq a b = MonoidHash a (FreqMap b)
-type DocumentId          = FilePath
-type Tag                 = T.Text
-type Cache a             = M.HashMap a a
+type FreqMap a              = MonoidHash a (Sum Int)
+type ConditionalFreq a b    = MonoidHash a (FreqMap b)
+type ProbMap a              = M.HashMap a Double
+type ConditionalProbMap a b = M.HashMap a (ProbMap b)
+type DocumentId             = FilePath
+type Tag                    = T.Text
+type Cache a                = M.HashMap a a
 
 class Probabilistic d s where
         -- | Return the probability [0.0-1.0] for @o@.
@@ -193,6 +198,36 @@ class Probabilistic d s => ProbabilityDist d s where
             where
                 t :: CondensedTableV s
                 t = table d
+
+class Monoid f => Frequencies f where
+    type FItem f
+
+    count :: f -> FItem f -> f
+    countAll :: Traversable t => f -> t (FItem f) -> f
+    frequency :: f -> FItem f -> Int
+    frequencyItems :: f -> [FItem f]
+    total :: f -> Int
+
+    countAll = foldl' count
+    total f = sum . map (frequency f) $ frequencyItems f
+
+instance (Eq a, Hashable a) => Frequencies (FreqMap a) where
+    type FItem (FreqMap a) = a
+
+    count fqs x = MHash . M.insertWith mappend x 1 $ unHash fqs
+    frequency fqs x = getSum . M.lookupDefault 0 x $ unHash fqs
+    frequencyItems = M.keys . unHash
+    total = getSum . mconcat . M.elems . unHash
+
+instance (Eq a, Hashable a, Eq b, Hashable b) => Frequencies (ConditionalFreq a b) where
+    type FItem (ConditionalFreq a b) = (a, b)
+
+    count fqs (a, b) = MHash . M.insertWith mappend a (MHash $ M.singleton b 1) $ unHash fqs
+    countAll f xs = let step m (a, b) = M.insertWith mappend a (MHash $ M.singleton b 1) m
+                    in  MHash . flip (foldl' step) xs $ unHash f
+    frequency (MHash f) (a, b) = getSum . fold $ M.lookup b . unHash =<< M.lookup a f
+    frequencyItems = concatMap (sequenceA . fmap (M.keys . unHash)) . M.toList . unHash
+    total = getSum . foldMap (mconcat . M.elems . unHash) . M.elems . unHash
 
 data Document b ts = Document
                    { _documentId     :: !DocumentId

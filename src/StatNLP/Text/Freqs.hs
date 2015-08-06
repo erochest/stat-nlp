@@ -49,12 +49,6 @@ reconstitute = concatMap (uncurry (flip L.replicate) . fmap getSum)
              . M.toList
              . unHash
 
-count :: (Eq a, Hashable a) => FreqMap a -> a -> FreqMap a
-count m a = MHash . M.insertWith mappend a 1 $ unHash m
-
-frequencies :: (Eq a, Hashable a, Foldable f) => f a -> FreqMap a
-frequencies = foldl' count mempty
-
 -- | Return frequencies of groups of input.
 conditionalFreqs :: (Eq k, Hashable k, Eq v, Hashable v, Foldable f)
                  => (a -> k) -> (a -> v) -> f a -> ConditionalFreq k v
@@ -84,8 +78,10 @@ groupFreqsBy key val = fromList
         fromList :: (Eq k, Hashable k, Monoid m) => [(k, m)] -> MonoidHash k m
         fromList = MHash . M.fromListWith mappend
 
-frequenciesC :: (Eq a, Hashable a, Monad m)
-             => Consumer a m (FreqMap a)
+frequencies :: (Eq a, Hashable a, Traversable t) => t a -> FreqMap a
+frequencies = countAll mempty
+
+frequenciesC :: (Eq a, Hashable a, Monad m) => Consumer a m (FreqMap a)
 frequenciesC = foldlC count mempty
 
 grandTotal :: FreqMap a -> Int
@@ -95,6 +91,9 @@ conditionalTotal :: ConditionalFreq a b -> Int
 conditionalTotal = getSum . mconcat . foldMap freqElems . freqElems
     where
         freqElems = M.elems . unHash
+
+freqsFromConditionals :: (Eq b, Hashable b) => ConditionalFreq a b -> FreqMap b
+freqsFromConditionals = fold . M.elems . unHash
 
 -- | Return the number of bins (sample values) with counts.
 bins :: FreqMap a -> Int

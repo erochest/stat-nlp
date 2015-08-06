@@ -1,4 +1,5 @@
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE RankNTypes       #-}
 
 
 module StatNLP.Text.Utils where
@@ -211,6 +212,8 @@ vectorPair :: V.Vector a -> Maybe (a, a)
 vectorPair v | V.length v >= 2 = Just (v V.! 0, v V.! 1)
              | otherwise       = Nothing
 
+type FreqState a = (FreqMap a, ConditionalFreq a a, ConditionalFreq (a, a) a)
+
 -- | This builds unigram, bigram, and trigram models from a single input
 -- stream. It should be relatively efficient.
 nGramModels :: (Hashable a, Eq a)
@@ -220,11 +223,9 @@ nGramModels = L.foldl' step (mempty, mempty, mempty)
             . map (L.take 3 . L.tail . L.inits)
             . L.tails
     where
-        step (uni, MHash bi, MHash tri) [[u], [b0, b1], [t0, t1, t2]] =
-            ( count uni u
-            , MHash $ M.insertWith mappend b0       (MHash $ M.singleton b1 1) bi
-            , MHash $ M.insertWith mappend (t0, t1) (MHash $ M.singleton t2 1) tri
-            )
+        step :: (Eq x, Hashable x) => FreqState x -> [[x]] -> FreqState x
+        step (uni, bi, tri) [[u], [b0, b1], [t0, t1, t2]] =
+            (count uni u, count bi (b0, b1), count tri ((t0, t1), t2))
         step freqs _ = freqs
 
 -- | This performs deleted interpolation. If you use currying to store the

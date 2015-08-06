@@ -49,6 +49,23 @@ unknown = "<UNK>"
 dataFile :: FilePath
 dataFile = "/Users/err8n/s/stat-nlp/data/austen-cntcnt.txt"
 
+-- For Naive Bayesian spam filter:
+--
+-- 1. Walk over the input directory;
+-- 2. Tokenize, normalize, and stoplist the text;
+-- 3. Tag from the filename;
+-- 4. Randomize the documents;
+-- 5. Divide them into equal sections for cross validation
+-- (https://en.wikipedia.org/wiki/Cross-validation_%28statistics%29, maybe
+-- do this as a library as well);
+-- 6. For each pass, train on 9 sections, test on 1, and compute the
+-- error;
+--    * [MSE](https://en.wikipedia.org/wiki/Mean_squared_error);
+--    * https://en.wikipedia.org/wiki/Accuracy_and_precision;
+--    * https://en.wikipedia.org/wiki/Perplexity; and
+--    * https://en.wikipedia.org/wiki/F1_score;
+-- 7. Average the errors.
+
 main :: IO ()
 main = do
     counts <-  force . MHash . fmap Sum

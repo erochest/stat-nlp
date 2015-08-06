@@ -28,6 +28,7 @@ library
                      , StatNLP.Output.Kwic
                      , StatNLP.Parallel
                      , StatNLP.Statistics
+                     , StatNLP.Statistics.Bayes
                      , StatNLP.Text.Collocates
                      , StatNLP.Text.Freqs
                      , StatNLP.Text.Index
