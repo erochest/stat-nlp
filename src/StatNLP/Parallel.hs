@@ -4,7 +4,7 @@ module StatNLP.Parallel
 
 
 import           Control.Monad.IO.Class
-import qualified Control.Monad.Par            as P hiding (runParIO)
+-- import qualified Control.Monad.Par            as P hiding (runParIO)
 import           Control.Monad.Par.Class
 import           Control.Monad.Par.Combinator
 import           Control.Monad.Par.IO

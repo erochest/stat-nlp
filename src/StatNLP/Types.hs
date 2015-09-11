@@ -9,6 +9,7 @@
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 
 module StatNLP.Types
@@ -112,7 +113,6 @@ import           Data.Hashable
 import qualified Data.HashMap.Strict              as M
 import qualified Data.HashSet                     as S
 import qualified Data.List                        as L
-import           Data.Maybe
 import           Data.Monoid
 import           Data.MonoTraversable
 import           Data.Ord

@@ -20,10 +20,8 @@ import qualified Data.List                        as L
 import           Data.List.NonEmpty               hiding (insert)
 import           Data.Ord
 import           Data.Semigroup
-import           Data.Typeable
 import qualified Data.Vector.Generic              as GV
 import           GHC.Generics
-import           System.Random.MWC
 import           System.Random.MWC.CondensedTable
 
 import           StatNLP.Types
@@ -35,9 +33,9 @@ data MapProbDist s
         } deriving (Show, Data, Typeable, Generic)
 
 mapProbDist :: M.HashMap s Double -> MapProbDist s
-mapProbDist m = MapProbDist $ fmap (/total) m
+mapProbDist m = MapProbDist $ fmap (/ttl) m
     where
-        total = sum $ M.elems m
+        ttl = sum $ M.elems m
 
 size :: MapProbDist s -> Int
 size = M.size . mapProb

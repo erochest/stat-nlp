@@ -15,7 +15,7 @@ module StatNLP.Corpus
 
 
 import           Control.Arrow       ((&&&))
-import           Control.Lens
+import           Control.Lens        hiding (transform)
 import           Data.Foldable
 import qualified Data.HashMap.Strict as M
 import           Data.Traversable
@@ -25,7 +25,7 @@ import           System.Directory
 import           StatNLP.Document
 import           StatNLP.Input
 import qualified StatNLP.Text.Index  as I
-import           StatNLP.Text.Tokens
+import           StatNLP.Text.Tokens hiding (tokenizer)
 import           StatNLP.Types
 import           StatNLP.Utils
 
@@ -36,14 +36,14 @@ initCorpus = Corpus M.empty
 makeCorpus :: Foldable t
            => Tokenizer (Token p PlainToken)
            -> DocumentReader b () -> t (Document b ()) -> Corpus b p
-makeCorpus tokenizer reader docs =
-    Corpus (foldl' insert M.empty docs) tokenizer reader
+makeCorpus tokenizer rdr docs =
+    Corpus (foldl' insert M.empty docs) tokenizer rdr
     where
         insert m d = M.insert (documentKey d) d m
 
 addDocument :: Corpus b p -> Document b () -> Corpus b p
 addDocument c d =
-    c & corpusDocuments .~ M.insert (documentKey d) d (_corpusDocuments c)
+    c & corpusDocuments %~ M.insert (documentKey d) d
 
 updateDocumentFilters :: Corpus (Token p PlainToken) p -> IO (Corpus (Token p PlainToken) p)
 updateDocumentFilters c = fmap (flip (set corpusDocuments) c . M.fromList)
@@ -56,8 +56,8 @@ loadCorpusDirectory :: Tokenizer (Token p PlainToken)
                     -> DocumentTransformer b ()
                     -> FilePath
                     -> IO (Corpus b p)
-loadCorpusDirectory tokenizer reader transform root =
-        fmap (makeCorpus tokenizer reader)
+loadCorpusDirectory tokenizer rdr transform root =
+        fmap (makeCorpus tokenizer rdr)
     .   mapM (transform . initDocument)
     =<< walk
     =<< makeAbsolute root

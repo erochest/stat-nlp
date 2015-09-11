@@ -16,22 +16,15 @@ module StatNLP.Distributions.Uniform
     ) where
 
 
-import           Control.Monad.Primitive
 import           Data.Data
 import           Data.Foldable
 import           Data.Hashable
-import qualified Data.HashMap.Strict              as M
 import qualified Data.HashSet                     as S
 import           Data.List.NonEmpty               hiding (insert)
 import           Data.Maybe
 import           Data.Semigroup
-import           Data.Sequence                    (Seq)
-import qualified Data.Text                        as T
-import           Data.Text.Encoding               (encodeUtf8)
-import           Data.Typeable
 import           Data.Vector                      ((!), (!?))
 import qualified Data.Vector                      as V
-import qualified Data.Vector.Generic              as GV
 import           GHC.Generics
 import           System.Random.MWC
 import           System.Random.MWC.CondensedTable
@@ -58,7 +51,7 @@ uniformDistFromSet s
                 $ S.toList s
 
 insert :: (Eq s, Hashable s) => s -> UniformDist s -> UniformDist s
-insert x u@(UniformDist s p ss) =
+insert x u@(UniformDist s _ _) =
     if S.size s == S.size s'
         then u
         else fromMaybe (singleton x) $ uniformDistFromSet s'

@@ -13,7 +13,6 @@ import qualified Data.List           as L
 import           Data.Maybe
 import           Data.Monoid
 import           Data.Ord
-import           Data.Traversable
 
 import           StatNLP.Text.Freqs
 import           StatNLP.Types

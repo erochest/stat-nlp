@@ -92,10 +92,12 @@ executable stat-nlp
                      , conduit-combinators
                      , conduit-extra
                      , deepseq
+                     , filepath
                      , hashable
                      , lens
                      , monad-par
                      , mtl
+                     , mwc-random
                      , optparse-applicative
                      , taygeta
                      , text

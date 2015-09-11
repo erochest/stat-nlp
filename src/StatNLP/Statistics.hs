@@ -38,7 +38,7 @@ import           Statistics.Matrix     hiding (map)
 import           Statistics.Regression (ols)
 import           Statistics.Sample     (mean)
 
-import           StatNLP.Text.Freqs
+import           StatNLP.Text.Freqs    hiding (bins)
 import           StatNLP.Types
 import           StatNLP.Utils
 
@@ -68,10 +68,10 @@ summaryStatsByC :: (Eq b, Hashable b, Monad m)
                 -> Consumer a m (M.HashMap b OnlineSummaryState)
 summaryStatsByC key value = foldlC (step' key value) mempty
     where
-        step' key value hm a =
-            M.insert k (step (fold $ M.lookup k hm) (value a)) hm
+        step' ky val hm a =
+            M.insert k (step (fold $ M.lookup k hm) (val a)) hm
             where
-                k = key a
+                k = ky a
 
 step :: OnlineSummaryState -> Double -> OnlineSummaryState
 step (OSS n x_ m) x = OSS n' x_' m'
@@ -121,7 +121,7 @@ likelihoodRatio p1 c1 p2 c2 p12 c12 n =
          - log' (l c12 c1 p1)
          - log' (l (c2 - c12) (n - c1) p2))
     where
-        l k n x = x^k * (1 - x)^(n - k)
+        l k n' x = x^k * (1 - x)^(n' - k)
 
 log' :: Floating x => x -> x
 log' = logBase 2
@@ -157,20 +157,19 @@ sgt counts@(MHash counts') confLevel = (pmap, pZero)
            . M.toList
            $ unHash counts
 
-        rs, ns :: Vector
+        rs :: Vector
         rs = V.map (fromIntegral . fst) rn
-        ns = V.map (fromIntegral . snd) rn
 
         -- roughly, n[row(i)]
         n :: Int -> Int
         n = lookup' counts'
 
         logs :: Int -> (Int, Int) -> (Double, Double, Double)
-        logs j (r, n) =
+        logs j (r, n') =
             let i  = if j == 0 then 0 else fst (rn ! (j - 1))
                 i' = fromIntegral i
                 k  = fromMaybe (2.0 * (rs ! j) - i') $ rs !? (j + 1)
-                z  = 2.0 * fromIntegral n / (k - i')
+                z  = 2.0 * fromIntegral n' / (k - i')
             in  ( z
                 , log $ fromIntegral r
                 , log z
@@ -193,7 +192,7 @@ sgt counts@(MHash counts') confLevel = (pmap, pZero)
                 cond0a False = (False, x)
 
                 cond1 (True, _) = (True, y)
-                cond1 x         = x
+                cond1 x'        = x'
 
                 r'     = fromIntegral r
                 c'     = fromIntegral c
@@ -202,9 +201,9 @@ sgt counts@(MHash counts') confLevel = (pmap, pZero)
                 y      = (r' + 1) * smoothed (r' + 1) / smoothed r'
                 nextN  = fromIntegral . n $ r + 1
                 cutOff = confLevel
-                       * sqrt((r' + 1.0)^2)
+                       * sqrt((r' + 1.0)^(2 :: Int))
                        * nextN
-                       / ( c'^2 * (1 + nextN / c'))
+                       / ( c'^(2 :: Int) * (1 + nextN / c'))
 
         zlrz :: V.Vector (Double, Double, Double)
         logR, logZ, rStar, p :: Vector
@@ -213,7 +212,7 @@ sgt counts@(MHash counts') confLevel = (pmap, pZero)
         logZ  = V.map (\(_, _, x) -> x) zlrz
         rStar = V.map snd $ V.postscanl' getRstar (False, 0.0) rn
 
-        p     = V.map (\rs -> (1 - pZero) * rs / bigNprime) rStar
+        p     = V.map (\rs' -> (1 - pZero) * rs' / bigNprime) rStar
 
         bigN :: Int
         bigN = V.sum $ V.map (uncurry (*)) rn
@@ -230,7 +229,7 @@ sgt counts@(MHash counts') confLevel = (pmap, pZero)
                 xys   = V.sum
                       . V.zipWith (*) rdiff
                       $ V.map (\z -> z - meanY) logZ
-                xsq   = V.sum $ V.map (^2) rdiff
+                xsq   = V.sum $ V.map (^(2 :: Int)) rdiff
             in  (xys / xsq, meanY - slope * meanX)
 
         pmap :: M.HashMap Int (Double, Double)

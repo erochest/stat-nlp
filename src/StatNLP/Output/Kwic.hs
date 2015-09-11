@@ -14,7 +14,7 @@ module StatNLP.Output.Kwic
 
 
 import           Control.Arrow          ((&&&))
-import           Control.Lens
+import           Control.Lens           hiding (parts)
 import           Data.Bifunctor
 import           Data.Char
 import           Data.Function          (on)
@@ -118,12 +118,12 @@ sliceHits ((l, Line n start _):rest) =
     where
         go :: Int -> [(Int, T.Text)] -> [(T.Text, LinePos)] -> [(Int, T.Text)]
         go lineNo parts [] = parts
-        go lineNo parts@((s, l'):parts') [(l, Line n _ end)]
-            | lineNo == n = (s, T.take (end - s) l'):parts'
-            | otherwise   = (0, T.take end l):parts
-        go lineNo parts ((l, Line n _ _):hits)
-            | lineNo == n = go lineNo parts hits
-            | otherwise   = go n ((0, l):parts) hits
+        go lineNo parts@((s, l'):parts') [(l'', Line n' _ end)]
+            | lineNo == n' = (s, T.take (end - s) l'):parts'
+            | otherwise    = (0, T.take end l''):parts
+        go lineNo parts ((l', Line n' _ _):hits)
+            | lineNo == n' = go lineNo parts hits
+            | otherwise    = go n' ((0, l'):parts) hits
 
 syncLines :: [[LinePos]]           -- ^ A document's hits, grouped and sorted by lines.
           -> [(Int, l)]            -- ^ A document's numbered lines.

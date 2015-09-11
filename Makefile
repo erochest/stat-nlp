@@ -4,17 +4,18 @@ SRC=$(shell find src -name '*.hs')
 CABAL=cabal
 
 # FLAGS=--enable-tests --enable-library-profiling --enable-executable-profiling
-# FLAGS=--enable-tests
+FLAGS=--pedantic
 
 RUN_FLAGS=
 
-CORPUS=corpora/gutenberg
+# CORPUS=corpora/gutenberg
 # CORPUS=corpora/gutenberg/README
 # CORPUS=corpora/gutenberg/carroll-alice.txt
 # CORPUS=corpora/gutenberg/austen-persuasion.txt
 # CORPUS=corpora/gutenberg/melville-moby_dick.txt
 # CORPUS=corpora/TOBACCO
 # CORPUS=TEST
+CORPUS=corpora/lingspam_public/bare
 
 all: test docs package
 
@@ -25,8 +26,8 @@ specs: build
 	./dist/build/stat-nlp-specs/stat-nlp-specs
 
 run:
-	stack build
-	stack exec -- stat-nlp $(CORPUS) $(RUN_FLAGS) > bigrams.txt
+	stack build $(FLAGS)
+	stack exec -- stat-nlp -s corpora/stopwords/english -c $(CORPUS) $(RUN_FLAGS)
 
 profile:
 	stack build --library-profiling --executable-profiling

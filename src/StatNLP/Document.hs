@@ -78,7 +78,7 @@ indexDocumentTokens i d = fmap (setDocumentTokens d _tokenNorm)
                         . mapAccumL step i
                         $ _documentTokens d
     where
-        step index token@Token{_tokenNorm} = flip (set tokenNorm) token <$> insertItem' _tokenNorm index
+        step idx token@Token{_tokenNorm} = flip (set tokenNorm) token <$> insertItem' _tokenNorm idx
 
 readIndexDocumentTokens :: Corpus b p -> IxIndex PlainToken -> Document b ()
                         -> IO (IxIndex PlainToken, Document Int [Token p Int])
@@ -91,14 +91,14 @@ getDocs :: M.HashMap PlainToken [(DocumentId, Int)]
         -> M.HashMap DocumentId (VectorDoc b)
         -> T.Text
         -> [(Int, VectorDoc b)]
-getDocs index docs target =
+getDocs idx docs target =
       mapMaybe (sequenceA . second (`M.lookup` docs) . swap)
-    $ M.lookupDefault [] target index
+    $ M.lookupDefault [] target idx
 
 getDocsC :: Monad m
          => M.HashMap PlainToken [(DocumentId, Int)]
          -> M.HashMap DocumentId (VectorDoc b)
          -> T.Text
          -> Producer m (Int, VectorDoc b)
-getDocsC index docs target =   sourceList (M.lookupDefault [] target index)
+getDocsC idx docs target =   sourceList (M.lookupDefault [] target idx)
                            =$= concatMapC (sequenceA . second (`M.lookup` docs) . swap)

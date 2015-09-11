@@ -3,4 +3,4 @@ packages:
 - '.'
 - '../../p/taygeta'
 extra-deps: []
-resolver: nightly-2015-06-10
+resolver: lts-3.3

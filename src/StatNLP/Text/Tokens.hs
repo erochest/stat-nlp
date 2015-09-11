@@ -23,12 +23,12 @@ defTokenRE :: Regex
 defTokenRE = regex [UnicodeWord] "[\\p{L}\\p{M}]+"
 
 posTokenizer :: Regex -> Tokenizer (Token SpanPos PlainToken)
-posTokenizer re = mapMaybe matchToken . findAll re
+posTokenizer rgx = mapMaybe matchToken . findAll rgx
 
 lineTokenizer :: Regex -> Int -> Tokenizer (Token LinePos PlainToken)
-lineTokenizer re offset input =
+lineTokenizer rgx offset input =
     concatMap (uncurry (map . linePos))
-        . zipWith (curry (fmap (posTokenizer re))) [0..]
+        . zipWith (curry (fmap (posTokenizer rgx))) [0..]
         $ T.lines input
     where
         linePos line t@Token{_tokenPos} =
