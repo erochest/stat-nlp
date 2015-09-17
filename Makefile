@@ -1,4 +1,3 @@
-
 SRC=$(shell find src -name '*.hs')
 
 CABAL=cabal
@@ -83,7 +82,7 @@ build:
 	stack build
 
 watch: build
-	ghcid "--command=stack ghci"
+	ghcid "--command=stack ghci --main-is stat-nlp:exe:stat-nlp"
 
 restart: distclean build
 

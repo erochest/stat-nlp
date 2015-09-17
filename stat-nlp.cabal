@@ -130,6 +130,15 @@ test-suite stat-nlp-specs
   ghc-options:         -threaded -rtsopts
   hs-source-dirs:      specs
   main-is:             Specs.hs
+  other-modules:       StatNLP.ContextSpec
+                     , StatNLP.Output.KwicSpec
+                     , StatNLP.Specs.Utils
+                     , StatNLP.StatisticsSpec
+                     , StatNLP.Text.CollocatesSpec
+                     , StatNLP.Text.IndexSpec
+                     , StatNLP.Text.NGramsSpec
+                     , StatNLP.Text.TokensSpec
+                     , StatNLP.Text.UtilsSpec
   build-depends:         base
                        , stat-nlp
                        , QuickCheck
