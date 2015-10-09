@@ -34,7 +34,9 @@ data MLEDist s t
 mleDist :: (Eq s, Hashable s, Eq t, Hashable t)
         => (s -> t) -> FreqMap s -> MLEDist s t
 mleDist shrink sfreqs =
-    MLEDist sfreqs ( ML.fromList $ fmap (uncurry step . fmap getSum) sfList) shrink
+    MLEDist sfreqs
+                ( ML.fromList $ fmap (uncurry step . fmap getSum) sfList)
+                shrink
     where
         sfList = M.toList $ unHash sfreqs
         tfreqs = M.fromListWith mappend $ fmap (first shrink) sfList

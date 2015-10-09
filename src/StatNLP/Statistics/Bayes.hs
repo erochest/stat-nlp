@@ -59,10 +59,15 @@ data BayesDist w s f
         , bayesPost  :: ConditionalProbMap s f
         }
 
-instance (Eq w, Hashable w, Eq s, Hashable s, Eq f, Hashable f) => Monoid (BayesTrain w s f) where
+instance ( Eq w, Hashable w, Eq s, Hashable s, Eq f
+         , Hashable f) => Monoid (BayesTrain w s f) where
+
     mempty = BayesTrain mempty mempty mempty mempty
     (BayesTrain aw as af asf) `mappend` (BayesTrain bw bs bf bsf) =
-        BayesTrain (aw `mappend` bw) (as `mappend` bs) (af `mappend` bf) (asf `mappend` bsf)
+        BayesTrain (aw `mappend` bw)
+                       (as `mappend` bs)
+                       (af `mappend` bf)
+                       (asf `mappend` bsf)
 
 trainOne :: (Eq w, Hashable w, Eq s, Hashable s, Eq f, Hashable f)
          => BayesTrain w s f -> w -> [s] -> [f] -> BayesTrain w s f
@@ -70,7 +75,8 @@ trainOne BayesTrain{..} w ss fs =
     BayesTrain { trainWord         = count    trainWord         w
                , trainCat          = countAll trainCat          ss
                , trainFeature      = countAll trainFeature      fs
-               , trainFeatureSense = countAll trainFeatureSense [(s, f) | s <- ss, f <- fs]
+               , trainFeatureSense = countAll trainFeatureSense
+                                     [(s, f) | s <- ss, f <- fs]
                }
 
 train :: (Traversable t, Eq w, Hashable w, Eq s, Hashable s, Eq f, Hashable f)
@@ -96,7 +102,8 @@ categorizeP BayesDist{..} w fs =
     where
         log2 x = logBase x 2
         step p f = M.mapWithKey (update f) p
-        update f s p = p + (log2 . fromMaybe 0.0) (M.lookup f =<< M.lookup s bayesPost)
+        update f s p = p + (log2 . fromMaybe 0.0)
+                       (M.lookup f =<< M.lookup s bayesPost)
 
 categorize :: (Eq w, Hashable w, Eq s, Hashable s, Eq f, Hashable f)
            => BayesDist w s f -> w -> [f] -> Maybe s

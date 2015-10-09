@@ -219,14 +219,20 @@ instance (Eq a, Hashable a) => Frequencies (FreqMap a) where
     frequencyItems = M.keys . unHash
     total = getSum . mconcat . M.elems . unHash
 
-instance (Eq a, Hashable a, Eq b, Hashable b) => Frequencies (ConditionalFreq a b) where
+instance (Eq a, Hashable a, Eq b, Hashable b)
+    => Frequencies (ConditionalFreq a b) where
+
     type FItem (ConditionalFreq a b) = (a, b)
 
-    count fqs (a, b) = MHash . M.insertWith mappend a (MHash $ M.singleton b 1) $ unHash fqs
-    countAll f xs = let step m (a, b) = M.insertWith mappend a (MHash $ M.singleton b 1) m
-                    in  MHash . flip (foldl' step) xs $ unHash f
-    frequency (MHash f) (a, b) = getSum . fold $ M.lookup b . unHash =<< M.lookup a f
-    frequencyItems = concatMap (sequenceA . fmap (M.keys . unHash)) . M.toList . unHash
+    count fqs (a, b) =
+        MHash . M.insertWith mappend a (MHash $ M.singleton b 1) $ unHash fqs
+    countAll f xs =
+        let step m (a, b) = M.insertWith mappend a (MHash $ M.singleton b 1) m
+        in  MHash . flip (foldl' step) xs $ unHash f
+    frequency (MHash f) (a, b) =
+        getSum . fold $ M.lookup b . unHash =<< M.lookup a f
+    frequencyItems =
+        concatMap (sequenceA . fmap (M.keys . unHash)) . M.toList . unHash
     total = getSum . foldMap (mconcat . M.elems . unHash) . M.elems . unHash
 
 data Document b ts = Document
@@ -257,7 +263,8 @@ instance (Eq a, Hashable a) => IsList (IxIndex a) where
             insert i@(IxIndex is ixs s) k =
                 case M.lookup k is of
                     Just _  -> i
-                    Nothing -> IxIndex (M.insert k s is) (M.insert s k ixs) $ succ s
+                    Nothing -> IxIndex (M.insert k s is) (M.insert s k ixs)
+                               $ succ s
     toList   = M.keys . _indexItems
 
 newtype InverseIndex a p = InverseIndex { unIndex :: M.HashMap a [p] }
@@ -338,10 +345,11 @@ newtype ContextItem a = CItem { getContextItem :: a }
 instance IsString a => IsString (ContextItem a) where
     fromString = CItem . fromString
 
-data MeasuredContext a = MContext
-                       { _mContextSize :: !(Sum Int)
-                       , _mContextSeq  :: !(FT.FingerTree (Sum Int) (ContextItem a))
-                       } deriving (Show, Eq)
+data MeasuredContext a
+    = MContext
+      { _mContextSize :: !(Sum Int)
+      , _mContextSeq  :: !(FT.FingerTree (Sum Int) (ContextItem a))
+      } deriving (Show, Eq)
 makeLenses ''MeasuredContext
 
 instance FT.Measured (Sum Int) SpanPos where
