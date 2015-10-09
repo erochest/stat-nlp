@@ -3,10 +3,9 @@
 {-# LANGUAGE OverloadedLists     #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-
-{-# ANN module "HLint: ignore Functor law" #-}
-{-# ANN module "HLint: ignore Evaluate" #-}
-{-# ANN module "HLint: ignore Use ." #-}
+{- # ANN module "HLint: ignore Functor law" #-}
+{- # ANN module "HLint: ignore Evaluate" #-}
+{- # ANN module "HLint: ignore Use ." #-}
 
 
 module StatNLP.ContextSpec where
