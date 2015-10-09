@@ -39,10 +39,10 @@ kwic :: Int
      -> InverseIndex PlainToken DocumentLine
      -> PlainToken
      -> IO [Kwic DocumentLine]
-kwic context corpus index token =
+kwic context corpus idx token =
     fmap L.concat . mapM (kwicDoc context corpus) $ sortGroup fst hits
     where
-        hits = M.lookupDefault [] token $ unIndex index
+        hits = M.lookupDefault [] token $ unIndex idx
 
 buildKwic :: Int -> Kwic DocumentLine -> Builder
 buildKwic context Kwic{..} =
@@ -77,7 +77,7 @@ stepLine :: DocumentId
          -> KwicState
          -> (Int, (T.Text, [Token LinePos PlainToken]), [LinePos])
          -> (KwicState, [Kwic DocumentLine])
-stepLine docId size empty s (lineNo, (line, tokens), hits) =
+stepLine docId size empty s (_, (line, tokens), hits) =
     concatMapAccum step s . syncHits tokens $ L.sortBy (comparing _posStart) hits
     where
         step :: KwicState -> (Token LinePos PlainToken, Bool) -> (KwicState, [Kwic DocumentLine])
@@ -117,7 +117,7 @@ sliceHits ((l, Line n start _):rest) =
     reverse . map snd $ go n [(start, T.drop start l)] rest
     where
         go :: Int -> [(Int, T.Text)] -> [(T.Text, LinePos)] -> [(Int, T.Text)]
-        go lineNo parts [] = parts
+        go _ parts [] = parts
         go lineNo parts@((s, l'):parts') [(l'', Line n' _ end)]
             | lineNo == n' = (s, T.take (end - s) l'):parts'
             | otherwise    = (0, T.take end l''):parts

@@ -75,7 +75,7 @@ trainOne BayesTrain{..} w ss fs =
 
 train :: (Traversable t, Eq w, Hashable w, Eq s, Hashable s, Eq f, Hashable f)
       => BayesTrain w s f -> t (w, [s], [f]) -> BayesTrain w s f
-train bt = foldl' (uncurry3 . trainOne) bt
+train = foldl' (uncurry3 . trainOne)
     where
         uncurry3 :: (a -> b -> c -> d) -> (a, b, c) -> d
         uncurry3 f (a, b, c) = f a b c
@@ -83,9 +83,11 @@ train bt = foldl' (uncurry3 . trainOne) bt
 finishTraining :: BayesTrain w s f -> BayesDist w s f
 finishTraining BayesTrain{..} = BayesDist prior post
     where
-        sensePriors sfreq wordCount = fmap ((/wordCount) . fromIntegral . getSum) $ unHash sfreq
-        prior = fmap (sensePriors trainCat . fromIntegral . getSum) $ unHash trainWord
-        post = fmap probabilities $ unHash trainFeatureSense
+        sensePriors sfreq wordCount = (/wordCount) . fromIntegral . getSum
+                                      <$> unHash sfreq
+        prior = sensePriors trainCat . fromIntegral . getSum
+                <$> unHash trainWord
+        post  = probabilities <$> unHash trainFeatureSense
 
 categorizeP :: (Eq w, Hashable w, Eq s, Hashable s, Eq f, Hashable f)
             => BayesDist w s f -> w -> [f] -> ProbMap s

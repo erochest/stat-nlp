@@ -96,8 +96,7 @@ walkPartitions xs = walk' xs []
 testBayes :: V.Vector Training -> V.Vector Training -> (Int, Int)
 testBayes testSet trainingSet =
     -- uncurry (/)
-    id
-        . (getSum *** getSum)
+    (getSum *** getSum)
         . foldMap (   ( Sum . testMetric)
                   &&& ( Sum
                       . fromIntegral
@@ -112,7 +111,9 @@ testBayes testSet trainingSet =
                      -> (T.Text, T.Text)
         testTraining bayes (w, [t], fs) = (t,) . fold $ categorize bayes w fs
         testTraining _     _            = mempty
+
         MHash cfreqs = frequencies $ concatMap (\(_, ts, _) -> ts) testSet
+
         testMetric (a, b) = if a == b then 1 else 0
 
 tagDocument :: Document b ts -> Document b ts

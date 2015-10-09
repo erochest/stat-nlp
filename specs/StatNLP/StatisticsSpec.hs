@@ -5,28 +5,22 @@ module StatNLP.StatisticsSpec where
 
 
 import           Control.Monad
-import           Data.Bifunctor
-import           Data.Hashable
 import qualified Data.HashMap.Strict as M
 import qualified Data.List           as L
-import           Data.List.Split
-import           Data.Maybe
 import           Data.Monoid
 import           Data.Tuple          (swap)
 
 import           Test.Hspec
 import           Test.HUnit
 
-import           StatNLP.Specs.Utils
 import           StatNLP.Statistics
 import           StatNLP.Types
 import           StatNLP.Utils
 
 
 spec :: Spec
-spec = do
-    describe "sgt" $ do
-        it "should replicate the output of SGT.c." $ do
+spec = describe "sgt" $
+       it "should replicate the output of SGT.c." $ do
             input    <- readHashMap "./data/austen-cntcnt.txt" :: IO (M.HashMap Int Int)
             expected <- readHashMap "./data/austen-sgt.txt"    :: IO (M.HashMap Int Double)
 

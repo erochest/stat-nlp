@@ -194,7 +194,7 @@ class Probabilistic d s => ProbabilityDist d s where
                 . fmap (id &&& probability d)
                 $ samples d
 
-        generate d g = genFromTable t g
+        generate d = genFromTable t
             where
                 t :: CondensedTableV s
                 t = table d

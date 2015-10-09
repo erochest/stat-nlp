@@ -12,21 +12,20 @@ import           Data.Ord
 import qualified Data.Text               as T
 import qualified Data.Vector             as V
 import           Test.Hspec
-import           Test.QuickCheck
 
 import           StatNLP.Text.Collocates
 import           StatNLP.Types
 
 
 -- Since everything's a list of ascending integers, this works.
-c :: (Int, Int) -> Collocate Int
-c (x, y) = Collocate x y (y - x)
+c' :: (Int, Int) -> Collocate Int
+c' (x, y) = Collocate x y (y - x)
 
 totuple :: Collocate a -> (a, a, Int)
 totuple (Collocate a b c) = (a, b, c)
 
 cs :: [(Int, Int)] -> [Collocate Int]
-cs = L.sortBy (comparing totuple) . fmap c
+cs = L.sortBy (comparing totuple) . fmap c'
 
 collocates' :: Int -> Int -> [Int] -> [Collocate Int]
 collocates' i j xs = L.sortBy (comparing totuple) $ collocates i j xs

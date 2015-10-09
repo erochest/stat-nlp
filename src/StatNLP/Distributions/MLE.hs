@@ -1,5 +1,3 @@
-{-# LANGUAGE DeriveDataTypeable    #-}
-{-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
@@ -9,10 +7,7 @@ module StatNLP.Distributions.MLE
     ) where
 
 
-import           Control.Arrow                    ((&&&))
-import           Control.Monad.Primitive
 import           Data.Bifunctor
-import           Data.Data
 import           Data.Foldable
 import           Data.Hashable
 import qualified Data.HashMap.Lazy                as ML
@@ -21,11 +16,7 @@ import qualified Data.List                        as L
 import           Data.List.NonEmpty               hiding (insert)
 import           Data.Ord
 import           Data.Semigroup
-import           Data.Typeable
 import qualified Data.Vector.Generic              as GV
-import           GHC.Generics
-import           GHC.Word                         (Word32)
-import           System.Random.MWC
 import           System.Random.MWC.CondensedTable
 
 import           StatNLP.Statistics               (mle)
@@ -35,9 +26,9 @@ import           StatNLP.Utils
 
 data MLEDist s t
         = MLEDist
-        { mleRaw    :: !(FreqMap s)
-        , mleFreq   :: !(ML.HashMap s Double)
-        , mleShrink :: s -> t
+        { _mleRaw    :: !(FreqMap s)
+        , mleFreq    :: !(ML.HashMap s Double)
+        , _mleShrink :: s -> t
         }
 
 mleDist :: (Eq s, Hashable s, Eq t, Hashable t)

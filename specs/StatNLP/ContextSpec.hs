@@ -1,20 +1,24 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# OPTIONS_GHC -fno-warn-unrecognised-pragmas #-}
 {-# LANGUAGE OverloadedLists     #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+
+{-# ANN module "HLint: ignore Functor law" #-}
+{-# ANN module "HLint: ignore Evaluate" #-}
+{-# ANN module "HLint: ignore Use ." #-}
 
 
 module StatNLP.ContextSpec where
 
 
-import           Control.Comonad
 import qualified Data.FingerTree as FT
 import           Data.Foldable   (foldl')
-import qualified Data.List       as L
 import           Data.Maybe
 import           Data.Monoid
 import qualified Data.Sequence   as Seq
 
-import           Test.Hspec
+import           Test.Hspec      hiding (after, before)
 import           Test.QuickCheck
 
 import           StatNLP.Context
@@ -31,7 +35,7 @@ instance Arbitrary a => Arbitrary (Context a) where
 
 
 sumc :: Num a => Context a -> a
-sumc (Context b a as c bs) = c + foldl' (+) 0 as + foldl' (+) 0 bs
+sumc (Context _ _ as c bs) = c + foldl' (+) 0 as + foldl' (+) 0 bs
 
 spec :: Spec
 spec = do
@@ -47,33 +51,42 @@ spec = do
         describe "pushR" $ do
             it "should maintain the size of the left context." $
                 property $ \(c :: Context Int) (xs :: [Int]) ->
-                    length (_contextBefore $ foldl' (flip pushR) c xs) == _contextBeforeN c
+                    length (_contextBefore $ foldl' (flip pushR) c xs)
+                               == _contextBeforeN c
             it "should maintain the size of the right context." $
                 property $ \(c :: Context Int) (xs :: [Int]) ->
-                    length (_contextAfter $ foldl' (flip pushR) c xs) == _contextAfterN c
+                    length (_contextAfter $ foldl' (flip pushR) c xs)
+                               == _contextAfterN c
             it "should shift everything over one." $
-                (0 `pushR` Context 2 2 [1, 2] 3 [4, 5]) `shouldBe` Context 2 2 [0, 1] 2 [3, 4]
+                (0 `pushR` Context 2 2 [1 :: Int, 2] 3 [4, 5]) `shouldBe`
+                    Context 2 2 [0, 1] 2 [3, 4]
 
         describe "pushL" $ do
             it "should maintain the size of the left context." $
                 property $ \(c :: Context Int) (xs :: [Int]) ->
-                    length (_contextBefore $ foldl' pushL c xs) == _contextBeforeN c
+                    length (_contextBefore $ foldl' pushL c xs)
+                               == _contextBeforeN c
             it "should maintain the size of the right context." $
                 property $ \(c :: Context Int) (xs :: [Int]) ->
-                    length (_contextAfter $ foldl' pushL c xs) == _contextAfterN c
+                    length (_contextAfter $ foldl' pushL c xs)
+                               == _contextAfterN c
             it "should shift everything over one." $
-                (Context 2 2 [1, 2] 3 [4, 5] `pushL` 6) `shouldBe` Context 2 2 [2, 3] 4 [5, 6]
+                (Context 2 2 [1 :: Int, 2] 3 [4, 5] `pushL` 6) `shouldBe`
+                    Context 2 2 [2, 3] 4 [5, 6]
 
         describe "shiftL" $ do
             it "should shift to nothing on an empty context." $
-                shiftL (Context 2 2 [1, 2] 3 []) `shouldSatisfy` isNothing
+                shiftL (Context 2 2 [1 :: Int, 2] 3 []) `shouldSatisfy`
+                       isNothing
             it "should shift to something on an existing context." $
-                shiftL (Context 2 2 [1, 2] 3 [4]) `shouldSatisfy` isJust
+                shiftL (Context 2 2 [1 :: Int, 2] 3 [4]) `shouldSatisfy` isJust
         describe "shiftR" $ do
             it "should shift to nothing on an empty context." $
-                shiftR (Context 2 2 [] 1 [2, 3]) `shouldSatisfy` isNothing
+                shiftR (Context 2 2 [] 1 [2 :: Int, 3]) `shouldSatisfy`
+                       isNothing
             it "should shift to something on an existing context." $
-                shiftR (Context 2 2 [1] 2 [3, 4]) `shouldSatisfy` isJust
+                shiftR (Context 2 2 [1 :: Int] 2 [3, 4]) `shouldSatisfy`
+                       isJust
 
     describe "MeasuredContext" $ do
         let goodbye = appendLeft (MContext 10 FT.empty) ([ "good-bye"
@@ -115,8 +128,3 @@ spec = do
         describe "getContext" $
             it "should return the context as a list." $
                 getContext today `shouldBe` ["of", "my", "life", "."]
-
-
-{- # ANN module "HLint: ignore Functor law" #-}
-{- # ANN module "HLint: ignore Evaluate" #-}
-{- # ANN module "HLint: ignore Use ." #-}

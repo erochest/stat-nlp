@@ -21,38 +21,32 @@ module StatNLP.Statistics
 
 
 import           Conduit
-import           Control.Arrow         ((&&&))
-import           Control.Monad
-import           Data.Bifunctor
 import           Data.Foldable
 import           Data.Hashable
-import qualified Data.HashMap.Strict   as M
-import qualified Data.List             as L
+import qualified Data.HashMap.Strict as M
+import qualified Data.List           as L
 import           Data.Maybe
 import           Data.Monoid
 import           Data.Ord
-import           Data.Traversable
-import           Data.Vector.Unboxed   ((!), (!?))
-import qualified Data.Vector.Unboxed   as V
-import           Statistics.Matrix     hiding (map)
-import           Statistics.Regression (ols)
-import           Statistics.Sample     (mean)
+import           Data.Vector.Unboxed ((!), (!?))
+import qualified Data.Vector.Unboxed as V
+import           Statistics.Matrix   hiding (map)
+import           Statistics.Sample   (mean)
 
-import           StatNLP.Text.Freqs    hiding (bins)
 import           StatNLP.Types
 import           StatNLP.Utils
 
 
-data OnlineSummaryState = OSS
-                        { ossN    :: !Int
-                        , ossMean :: !Double
-                        , ossM2   :: !Double
-                        }
+data OnlineSummaryState =
+    OSS !Int      -- ^ N
+        !Double   -- ^ Mean
+        !Double   -- ^ M2
 
 instance Monoid OnlineSummaryState where
     mempty = OSS 0 0.0 0.0
     mappend (OSS na xa m2a) (OSS nb xb m2b) =
-        OSS n (xa + theta * nb' / n') (m2a + m2b + theta^2 * (na' * nb') / n')
+        OSS n (xa + theta * nb' / n')
+                (m2a + m2b + theta^(2 :: Int) * (na' * nb') / n')
         where
             n     = na + nb
             na'   = fromIntegral na
@@ -181,9 +175,7 @@ sgt counts@(MHash counts') confLevel = (pmap, pZero)
         getRstar :: (Bool, Double) -> (Int, Int) -> (Bool, Double)
         getRstar (indiffValsSeen, _) (r, c) = cond1 $ cond0 indiffValsSeen'
             where
-                indiffValsSeen' = if not (M.member (r+1) counts')
-                                      then True
-                                      else indiffValsSeen
+                indiffValsSeen' = not (M.member (r+1) counts') || indiffValsSeen
 
                 cond0 True  = (True, 0)
                 cond0 False = cond0a $ abs (x - y) <= cutOff

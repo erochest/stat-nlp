@@ -1,16 +1,16 @@
 {-# LANGUAGE OverloadedLists     #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 
 module StatNLP.Text.UtilsSpec where
 
 
-import           Control.Monad.Identity
 import           Data.Foldable
 import           Data.Hashable
-import qualified Data.HashMap.Strict    as M
-import qualified Data.List              as L
+import qualified Data.HashMap.Strict as M
+import qualified Data.List           as L
 import           Data.Monoid
 import           Data.Ord
 
@@ -22,7 +22,8 @@ import           StatNLP.Text.Utils
 import           StatNLP.Types
 
 
-instance (Eq k, Hashable k, Arbitrary k, Arbitrary v) => Arbitrary (M.HashMap k v) where
+instance (Eq k, Hashable k, Arbitrary k, Arbitrary v)
+    => Arbitrary (M.HashMap k v) where
     arbitrary = M.fromList <$> arbitrary
     shrink = map M.fromList . shrink . M.toList
 
@@ -31,9 +32,11 @@ spec :: Spec
 spec = do
     describe "count" $ do
         it "should expand when a new item is added to it." $
-            (M.size . unHash $ count mempty (42 :: Int)) `shouldBe` 1
+           let c = unHash $ count mempty 42 :: M.HashMap Int (Sum Int)
+           in  M.size c `shouldBe` 1
         it "should maintain its size when an existing item is re-added to it." $
-            (M.size . unHash . count (MHash [(42 :: Int, 1)]) $ 42 :: Int) `shouldBe` 1
+           let c = unHash $ count (MHash [(42, 1)]) 42 :: M.HashMap Int (Sum Int)
+           in  M.size c `shouldBe` 1
 
     describe "frequencies" $
         it "should have the sum of its values equal to the length of its input." $
@@ -86,9 +89,8 @@ spec = do
         it "should return sublists of equal length." $
             property $ \n (xs :: [Int]) ->
                 case map length (ngrams n xs) of
-                    []   -> True
-                    [_]  -> True
                     y:ys -> all (== y) ys
+                    _    -> True
         it "should return all the sublists of a sequence." $
             ngrams 3 ([0..9] :: [Int]) `shouldBe` [ [0, 1, 2], [1, 2, 3]
                                                   , [2, 3, 4], [3, 4, 5]

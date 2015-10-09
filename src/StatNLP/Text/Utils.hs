@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RankNTypes       #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 
 module StatNLP.Text.Utils where
@@ -8,7 +9,6 @@ module StatNLP.Text.Utils where
 import           Conduit
 import           Control.Arrow
 import           Control.Monad.Par
-import           Data.Bifunctor
 import           Data.Hashable
 import qualified Data.HashMap.Strict as M
 import qualified Data.List           as L
@@ -66,8 +66,8 @@ tTestNGramFreqs :: (Eq a, Hashable a)
                 -> FreqMap a            -- ^ frequencies of items
                 -> V.Vector a           -- ^ target n-gram
                 -> Double               -- ^ t-test output
-tTestNGramFreqs ngrams items =
-    tTestNGramFreqsTotals ngrams (grandTotal ngrams) items (grandTotal items)
+tTestNGramFreqs ngrms items =
+    tTestNGramFreqsTotals ngrms (grandTotal ngrms) items (grandTotal items)
 
 tTestNGramFreqsTotals :: (Eq a, Hashable a)
                       => FreqMap (V.Vector a)   -- ^ frequencies of n-grams
@@ -76,18 +76,18 @@ tTestNGramFreqsTotals :: (Eq a, Hashable a)
                       -> Int                    -- ^ total number of items
                       -> V.Vector a             -- ^ target n-gram
                       -> Double                 -- ^ t-test output
-tTestNGramFreqsTotals (MHash ngrams) totalNGrams (MHash items) totalItems target =
+tTestNGramFreqsTotals (MHash ngrms) totalNGrams (MHash items) totalItems target =
     tTest expected actual stddev totalNGrams
     where
-        lookup hash x = getSum $ M.lookupDefault 0 x hash
+        lu h x   = getSum $ M.lookupDefault 0 x h
         expected = getProduct
                  $ foldMap ( Product
                            . (/ totalItems')
                            . fromIntegral
-                           . lookup items)
+                           . lu items)
                    target
 
-        actualFreq = fromIntegral $ lookup ngrams target
+        actualFreq = fromIntegral $ lu ngrms target
         actual     = actualFreq / totalNGrams'
 
         totalNGrams' :: Double
@@ -97,33 +97,33 @@ tTestNGramFreqsTotals (MHash ngrams) totalNGrams (MHash items) totalItems target
         totalItems' = fromIntegral totalItems
 
         stddev = sqrt $ (1.0 / totalNGrams') * (hits + misses)
-        hits   = actualFreq * (1.0 - actual)^2
-        misses = (totalNGrams' - actualFreq) * (0.0 - actual)^2
+        hits   = actualFreq * (1.0 - actual)^(2 :: Int)
+        misses = (totalNGrams' - actualFreq) * (0.0 - actual)^(2 :: Int)
 
 tTestNGramMatrix :: (Eq a, Hashable a, NFData a)
                  => FreqMap (V.Vector a)
                  -> FreqMap a
                  -> M.HashMap (V.Vector a) Double
-tTestNGramMatrix ngrams = M.fromList . tTestNGramMatrixList ngrams
+tTestNGramMatrix ngrms = M.fromList . tTestNGramMatrixList ngrms
 
 tTestNGramMatrixList :: (Eq a, Hashable a, NFData a)
                      => FreqMap (V.Vector a)
                      -> FreqMap a
                      -> [(V.Vector a, Double)]
-tTestNGramMatrixList ngrams items =
+tTestNGramMatrixList ngrms items =
       runPar
-    . parMap (id &&& tTestNGramFreqsTotals ngrams ngramsTotal items itemsTotal)
+    . parMap (id &&& tTestNGramFreqsTotals ngrms ngramsTotal items itemsTotal)
     . M.keys
-    $ unHash ngrams
+    $ unHash ngrms
     where
-        ngramsTotal = grandTotal ngrams
+        ngramsTotal = grandTotal ngrms
         itemsTotal  = grandTotal items
 
 tDifferenceMatrixList :: (Eq a, Hashable a, NFData a, Ord a)
                       => FreqMap (a, a)
                       -> a
                       -> [((a, Int), (a, Int), Double)]
-tDifferenceMatrixList freqs a =
+tDifferenceMatrixList freqs item =
     runPar $ parMap (uncurry tDiff) pairs
     where
         tDiff a@(_, fa) b@(_, fb) = (a, b, tTestDifferences fa fb)
@@ -131,7 +131,7 @@ tDifferenceMatrixList freqs a =
                . M.toList
                . M.fromListWith mappend
                . fmap swap
-               . mapMaybe (sequenceA . fmap (collocate a) . swap)
+               . mapMaybe (sequenceA . fmap (collocate item) . swap)
                . filter ((> 1) . snd)
                . M.toList
                $ unHash freqs
@@ -148,58 +148,59 @@ likelihoodMatrixList :: (Eq a, Hashable a, NFData a)
                      => FreqMap a
                      -> FreqMap (a, a)
                      -> [(((a, Double), (a, Double)), Double, Double)]
-likelihoodMatrixList freqs ngrams =
-    filter (isNum . third) $ matrixList lhr ngrams
+likelihoodMatrixList freqs ngrms =
+    filter (isNum . third) $ matrixList lhr ngrms
     where
         isNum x     = not $ isNaN x || isInfinite x
         totalFreqs' = grandTotal freqs
         totalFreqs  = fromIntegral totalFreqs'
-        totalNGrams = fromIntegral $ grandTotal ngrams
+        totalNGrams = fromIntegral $ grandTotal ngrms
         freqs'      = unHash freqs
-        lhr ng@(a, b) c = let ac = lookup' freqs' a
-                              bc = lookup' freqs' b
-                              ap = fromIntegral ac / totalFreqs
-                              bp = fromIntegral bc / totalFreqs
-                              lr = likelihoodRatio ap ac bp bc
-                                           (fromIntegral c / totalNGrams) c
-                                           totalFreqs'
-                          in  (((a, ap), (b, bp)), fromIntegral c / totalNGrams, lr)
+        lhr (a, b) c = let ac = lookup' freqs' a
+                           bc = lookup' freqs' b
+                           ap = fromIntegral ac / totalFreqs
+                           bp = fromIntegral bc / totalFreqs
+                           lr = likelihoodRatio ap ac bp bc
+                                        (fromIntegral c / totalNGrams) c
+                                        totalFreqs'
+                       in  (((a, ap), (b, bp)), fromIntegral c / totalNGrams, lr)
 
 pointwiseMIMatrixList :: (Eq a, Hashable a, NFData a)
                       => FreqMap a
                       -> FreqMap (a, a)
                       -> [(((a, Double), (a, Double)), Double, Double)]
-pointwiseMIMatrixList freqs ngrams = matrixList mi ngrams
+pointwiseMIMatrixList freqs ngrms = matrixList mi ngrms
     where
-        mi ng@(a, b) c =
-            let a' = fromIntegral (lookup' freqs' a) / total
-                b' = fromIntegral (lookup' freqs' b) / total
+        mi (a, b) c =
+            let a' = fromIntegral (lookup' freqs' a) / total'
+                b' = fromIntegral (lookup' freqs' b) / total'
             in  ( ((a, a'), (b, b'))
                 , fromIntegral c / ngTotal
                 , pointwiseMI a' b'
                 )
 
         freqs'  = unHash freqs
-        total   = fromIntegral $ grandTotal freqs
-        ngTotal = fromIntegral $ grandTotal ngrams
+        total'  = fromIntegral $ grandTotal freqs
+        ngTotal = fromIntegral $ grandTotal ngrms
 
 mleMatrixList :: (Ord a, Eq a, Hashable a, NFData a)
               => FreqMap a
               -> FreqMap (a, a)
               -> [(a, a, Int, Double)]
-mleMatrixList freqs g3 =
+mleMatrixList _ g3 =
     runPar . fmap (concat . catMaybes)
            . parMap mlePair
            . M.toList
            $ unHash g2
     where
         g2 = groupFreqsBy fst snd g3
-        mlePair (a, fqs@(MHash freqs))
-            | M.size freqs > 1 = Just . map (uncurry (mle' a total) . fmap getSum)
-                                      $ M.toList freqs
+        mlePair (a, fqs@(MHash fqs'))
+            | M.size fqs' > 1 = Just . map ( uncurry (mle' a total')
+                                           . fmap getSum)
+                                     $ M.toList fqs'
             | otherwise = Nothing
             where
-                total = grandTotal fqs
+                total' = grandTotal fqs
         mle' a cn1 b cn = (a, b, cn, mle cn cn1)
 
 matrixList :: (NFData b) => (a -> Int -> b) -> FreqMap a -> [b]
@@ -243,9 +244,9 @@ ngramInterpolation :: (Hashable a, Eq a)
                    -> Double
 ngramInterpolation (l1, l2, l3) xs =
     let (p1, p2, p3) = probs $ nGramModels xs
-    in  \(w1, w2, w3) -> l1 * (M.lookupDefault 0.0 w3 p1)
-                      +  l2 * (lookupDefault p2 w2 w3)
-                      +  l3 * (lookupDefault p3 (w1, w2) w3)
+    in  \(w1, w2, w3) -> l1 * M.lookupDefault 0.0 w3 p1
+                      +  l2 * lookupDefault p2 w2 w3
+                      +  l3 * lookupDefault p3 (w1, w2) w3
     where
         probs (u, MHash b, MHash t) =
             (probabilities u, probabilities <$> b, probabilities <$> t)

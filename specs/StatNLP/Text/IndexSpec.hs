@@ -9,12 +9,11 @@ module StatNLP.Text.IndexSpec where
 import qualified Data.List           as L
 import           Data.Maybe
 import           Data.Text
-import qualified Data.Text           as T
 
 import           Test.Hspec
 import           Test.QuickCheck
 
-import           StatNLP.Specs.Utils
+import           StatNLP.Specs.Utils ()
 import           StatNLP.Text.Index
 import qualified StatNLP.Text.Index  as I
 import           StatNLP.Types

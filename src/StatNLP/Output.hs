@@ -16,7 +16,6 @@ import           Data.Text.Buildable
 import qualified Data.Text.Format        as F
 
 import           StatNLP.Document
-import           StatNLP.Statistics
 import           StatNLP.Text.Collocates
 import           StatNLP.Text.Freqs
 import           StatNLP.Types
@@ -37,9 +36,9 @@ printColls :: M.HashMap PlainToken [(DocumentId, Int)]
            -> M.HashMap DocumentId (VectorDoc b)
            -> T.Text
            -> IO ()
-printColls index docs target = do
+printColls idx docs target = do
     stats <- fmap collocateStatsCFin
-          .  runResourceT $  getDocsC index docs target
+          .  runResourceT $  getDocsC idx docs target
                           =$ getCollocatesC 0 3
                           $$ collocateStatsC
     mapM_ (F.print "{}\t{}\t{}\t{}\t{}\n")

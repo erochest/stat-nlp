@@ -18,14 +18,14 @@ import           StatNLP.Types
 
 spec :: Spec
 spec = do
-    let tokenize  = posTokenizer  (regex [UnicodeWord] "\\w+")
+    let tokenize' = posTokenizer  (regex [UnicodeWord] "\\w+")
         ltokenize = lineTokenizer (regex [UnicodeWord] "\\w+") 0
 
     describe "posTokenizer" $ do
         it "should yield monotonically increasing column numbers within a line." $
             property $ \input ->
                 let step (i, prev) j = (j, prev && i < j)
-                    tokens = tokenize input
+                    tokens = tokenize' input
                     cols   = map (_spanStart . _tokenPos) tokens
                     (_, increasing) = foldl step (-1, True) cols
                 in  increasing
@@ -33,23 +33,23 @@ spec = do
             let input = "Now is the time for all good people to come to the\
                         \ aid of their country."
                 token n i = Token n Nothing . Span i $ i + T.length n
-            in  tokenize input `shouldBe` [ token "Now"     0
-                                          , token "is"      4
-                                          , token "the"     7
-                                          , token "time"    11
-                                          , token "for"     16
-                                          , token "all"     20
-                                          , token "good"    24
-                                          , token "people"  29
-                                          , token "to"      36
-                                          , token "come"    39
-                                          , token "to"      44
-                                          , token "the"     47
-                                          , token "aid"     51
-                                          , token "of"      55
-                                          , token "their"   58
-                                          , token "country" 64
-                                          ]
+            in  tokenize' input `shouldBe` [ token "Now"     0
+                                           , token "is"      4
+                                           , token "the"     7
+                                           , token "time"    11
+                                           , token "for"     16
+                                           , token "all"     20
+                                           , token "good"    24
+                                           , token "people"  29
+                                           , token "to"      36
+                                           , token "come"    39
+                                           , token "to"      44
+                                           , token "the"     47
+                                           , token "aid"     51
+                                           , token "of"      55
+                                           , token "their"   58
+                                           , token "country" 64
+                                           ]
 
     describe "lineTokenizer" $ do
         it "should correctly identify the line numbers of the tokens." $

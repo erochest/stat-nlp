@@ -18,7 +18,6 @@ import           Data.List.NonEmpty               hiding (insert)
 import           Data.Ord
 import           Data.Semigroup
 import qualified Data.Vector.Generic              as GV
-import           System.Random.MWC
 import           System.Random.MWC.CondensedTable
 
 import           StatNLP.Statistics               (sgt)
@@ -28,11 +27,10 @@ import           StatNLP.Utils
 
 
 data SGTDist s
-        = SGTDist
-        { sgtBase       :: !(FreqMap s)
-        , sgtConfidence :: !Double
-        , sgtFreqs      :: !(M.HashMap Int (Double, Double))
-        }
+    = SGTDist
+        !(FreqMap s)                       -- ^ base
+        !Double                            -- ^ confidence
+        !(M.HashMap Int (Double, Double))  -- ^ freqs
 
 sgtDist :: FreqMap a -> Double -> SGTDist a
 sgtDist freqs confLevel =
@@ -63,8 +61,7 @@ instance (Eq s, Hashable s) => ProbabilityDist (SGTDist s) s where
                 xs -> Just
                    .  fst
                    .  L.maximumBy (comparing snd)
-                   .  fmap (fmap (snd . lookupP p . getSum))
-                   $  M.toList fqs
+                   $  fmap (fmap (snd . lookupP p . getSum)) xs
 
         samples (SGTDist (MHash fqs) _ _) = M.keys fqs
 

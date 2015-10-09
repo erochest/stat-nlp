@@ -23,7 +23,7 @@ import           Data.Foldable
 import           Data.Hashable
 import qualified Data.HashMap.Strict as M
 import           Data.Maybe
-import           Data.Sequence       (ViewL (..), ViewR (..), (<|), (><), (|>))
+import           Data.Sequence       (ViewL (..), (><), (|>))
 import qualified Data.Sequence       as S
 import           Data.Traversable
 import           Data.Vector         ((!?))
@@ -31,15 +31,15 @@ import qualified Data.Vector         as V
 import           Statistics.Sample
 
 import           StatNLP.Statistics
-import           StatNLP.Types       hiding (left)
+import           StatNLP.Types
 
 
 data CollState a
         = CS
-        { csBefore :: !(S.Seq (a, Int))
-        , csCenter :: !(Maybe (a, Int))
-        , csAfter  :: !(S.Seq (a, Int))
-        , csI      :: !Int
+        { _csBefore :: !(S.Seq (a, Int))
+        , _csCenter :: !(Maybe (a, Int))
+        , csAfter   :: !(S.Seq (a, Int))
+        , csI       :: !Int
         }
 
 instance Enum (CollState a) where
@@ -105,8 +105,8 @@ initState :: CollState a
 initState = CS S.empty Nothing S.empty 0
 
 left :: S.Seq (a, Int) -> S.Seq (a, Int) -> S.Seq (a, Int) -> Int -> CollState a
-left empty nonEmpty seq n =
-    case S.viewl seq of
+left empty nonEmpty sq n =
+    case S.viewl sq of
         EmptyL  -> CS empty    Nothing  S.empty n
         x :< xs -> CS nonEmpty (Just x) xs      n
 
@@ -134,7 +134,7 @@ pairs :: CollState a -> S.Seq (Collocate a)
 pairs (CS _ Nothing _ _)    = S.empty
 pairs (CS as (Just c) zs _) = fmap (coll c) $ as >< zs
     where
-        coll (c, i) (d, j) = Collocate c d (j - i)
+        coll (c', i) (d, j) = Collocate c' d (j - i)
 
 finis :: Int -> CollState a -> S.Seq (Collocate a) -> S.Seq (Collocate a)
 finis before s xs = xs >< finis' before (shift' before s)

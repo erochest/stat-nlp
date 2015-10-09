@@ -19,13 +19,9 @@ CORPUS=corpora/lingspam_public/bare
 all: test docs package
 
 test:
-	stack test
+	stack test stat-nlp:test:stat-nlp-specs $(FLAGS)
 
-specs: build
-	./dist/build/stat-nlp-specs/stat-nlp-specs
-
-run:
-	stack build $(FLAGS)
+run: build
 	stack exec -- stat-nlp -s corpora/stopwords/english -c $(CORPUS) $(RUN_FLAGS)
 
 profile:
@@ -33,7 +29,7 @@ profile:
 	stack exec -- stat-nlp $(CORPUS) $(RUN_FLAGS) > bigrams.txt
 
 benchmark:
-	stack bench
+	stack bench $(FLAGS)
 
 sgt.out: sgt
 	./sgt < data/austen-cntcnt.txt > sgt.out
@@ -62,9 +58,6 @@ tags: ${SRC}
 hlint:
 	hlint *.hs src specs
 
-ghcid:
-	ghcid "--command=stack ghci"
-
 clean:
 	stack clean
 	-rm -rf *.hp *.prof *.ps *.aux
@@ -79,7 +72,7 @@ stat-nlp.ps: stat-nlp.hp
 	hp2ps -e8in -c $<
 
 build:
-	stack build
+	stack build $(FLAGS)
 
 watch: build
 	ghcid "--command=stack ghci --main-is stat-nlp:exe:stat-nlp"

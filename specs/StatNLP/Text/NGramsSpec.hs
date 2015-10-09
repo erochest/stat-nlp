@@ -5,14 +5,12 @@
 module StatNLP.Text.NGramsSpec where
 
 
-import           Control.Lens
 import qualified Data.HashMap.Strict as M
 import qualified Data.List           as L
 import           Data.Ord
 import qualified Data.Text           as T
 
 import           Test.Hspec
-import           Test.QuickCheck
 
 import           StatNLP.Corpus
 import           StatNLP.Document
@@ -25,9 +23,9 @@ import           StatNLP.Utils
 
 spec :: Spec
 spec = do
-    let doc    = initDocument "<paragraphs>"
-        corpus = makeCorpus tokenizer (return . getParagraph . T.pack . _documentId)
-                            (map initDocument ["<paragraph0>", "<paragraph1>"])
+    let corpus = makeCorpus tokenizer
+                 (return . getParagraph . T.pack . _documentId)
+                 (map initDocument ["<paragraph0>", "<paragraph1>"])
     docs <- runIO $ readCorpusVectors Nothing corpus
     let tokens' = fmap (fmap _tokenNorm . _documentTokens)
                 . L.sortBy (comparing _documentId)
@@ -37,7 +35,7 @@ spec = do
         unknown = "*"
         tokens  = fmap (replaceFromSet hapax unknown) tokens'
         freqs   = replaceFreqsFromSet hapax unknown freqs'
-        ngrams  = foldParMap (frequencies . trigramsV) tokens
+        ngrms   = foldParMap (frequencies . trigramsV) tokens
 
     describe "tokenizer" $
         it "should read the right tokens." $
@@ -203,7 +201,7 @@ spec = do
 
     describe "trigramsV" $
         it "should identify the trigrams in the input." $
-            unHash ngrams `shouldBe`
+            unHash ngrms `shouldBe`
                   [ (("*", "*", "*"), 13)
                   , (("*", "*", "a"), 2)
                   , (("*", "*", "if"), 2)
@@ -372,4 +370,4 @@ paragraphs = [ "\
 getParagraph :: T.Text -> T.Text
 getParagraph "<paragraph0>" = head paragraphs
 getParagraph "<paragraph1>" = paragraphs !! 1
-
+getParagraph _              = T.empty

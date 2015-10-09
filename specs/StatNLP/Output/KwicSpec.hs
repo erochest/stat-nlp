@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE NamedFieldPuns    #-}
 {-# LANGUAGE OverloadedLists   #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -21,13 +22,12 @@ import           Test.QuickCheck
 
 import           StatNLP.Document    (documentKey, readInverseIndexDocument)
 import           StatNLP.Output.Kwic
-import           StatNLP.Text.Index
 import           StatNLP.Text.Tokens (tokenize)
 import           StatNLP.Types
 
 
 pending' :: Expectation -> Expectation
-pending' m = pending
+pending' _ = pending
 
 instance Arbitrary T.Text where
     arbitrary = T.pack <$> arbitrary
@@ -87,10 +87,10 @@ spec = do
             corpus   = Corpus docs tokenize readDoc
             corpus5  = Corpus doc5 tokenize readDoc
 
-        index  <- runIO $ fold <$> mapM (readInverseIndexDocument corpus ) (M.elems docs)
-        index5 <- runIO $ fold <$> mapM (readInverseIndexDocument corpus5) (M.elems doc5)
-        let kwic10 = fmap (L.sortBy (comparing (_posLine . snd . _kwicPos))) . kwic 10 corpus  index
-            kwic5  = fmap (L.sortBy (comparing (_posLine . snd . _kwicPos))) . kwic 10 corpus5 index5
+        idx  <- runIO $ fold <$> mapM (readInverseIndexDocument corpus ) (M.elems docs)
+        idx5 <- runIO $ fold <$> mapM (readInverseIndexDocument corpus5) (M.elems doc5)
+        let kwic10 = fmap (L.sortBy (comparing (_posLine . snd . _kwicPos))) . kwic 10 corpus  idx
+            kwic5  = fmap (L.sortBy (comparing (_posLine . snd . _kwicPos))) . kwic 10 corpus5 idx5
 
         it "should properly format a single hit in a corpus." $
             kwic10 "m" `shouldReturn`
@@ -133,8 +133,8 @@ spec = do
             property $ \hits ->
                 syncLines hits [] == ([] :: [(Int, T.Text, [LinePos])])
         it "should return the input with no hits." $
-            property $ \lines ->
-                syncLines [] lines == ([(n, l, [])|(n, l) <- lines] :: [(Int, T.Text, [LinePos])])
+            property $ \lns ->
+                syncLines [] lns == ([(n, l, [])|(n, l) <- lns] :: [(Int, T.Text, [LinePos])])
         it "should sync input lines with hit positions." $
             let inputs = zip [0..] ["one", "two", "three", "four", "five"]
                 hits   = [ [Line 1 2 3, Line 1 4 5]
@@ -142,7 +142,7 @@ spec = do
                          , [Line 4 5 6, Line 4 7 8, Line 4 9 10]
                          ]
             in  syncLines hits inputs
-                    `shouldBe` [ (0, "one",   [])
+                    `shouldBe` [ (0, "one",   []) :: (Int, T.Text, [LinePos])
                                , (1, "two",   [Line 1 2 3, Line 1 4 5])
                                , (2, "three", [])
                                , (3, "four",  [Line 3 4 5])

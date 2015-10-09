@@ -65,7 +65,7 @@ size :: UniformDist s -> Int
 size = S.size . uniformSet
 
 merge :: (Eq s, Hashable s) => UniformDist s -> UniformDist s -> UniformDist s
-merge a b = fromMaybe a . uniformDistFromSet $ (uniformSet a) <> (uniformSet b)
+merge a b = fromMaybe a . uniformDistFromSet $ uniformSet a <> uniformSet b
 
 instance (Eq a, Hashable a) => Semigroup (UniformDist a) where
     (<>) = merge
