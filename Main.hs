@@ -78,7 +78,7 @@ main = do
         . fmap (uncurry testBayes . fmap V.concat)
         $ walkPartitions parts
 
-type Training = (T.Text, [T.Text], [T.Text])
+type Training = (T.Text, T.Text, [T.Text])
 
 walkPartitions :: [x] -> [(x, [x])]
 walkPartitions xs = walk' xs []
@@ -102,17 +102,22 @@ testBayes testSet trainingSet =
                       . fromIntegral
                       . getSum
                       . fold
-                      . (`M.lookup` cfreqs)
+                      . (`M.lookup` undefined) -- cfreqs)
                       . fst))
         . V.toList
-        $ fmap (testTraining . finishTraining $ train mempty trainingSet) testSet
+              $ undefined
+        -- $ fmap (testTraining . finishTraining $ train mempty trainingSet) testSet
     where
-        testTraining :: BayesDist T.Text T.Text T.Text -> Training
+        testTraining :: BayesDist T.Text T.Text Bool -> Training
                      -> (T.Text, T.Text)
-        testTraining bayes (w, [t], fs) = (t,) . fold $ categorize bayes w fs
+        testTraining bayes (l, t, fs) = (l,)
+                                        . fold
+                                        . categorize bayes
+                                        . M.fromList
+                                        $ map (,True) fs
         testTraining _     _            = mempty
 
-        MHash cfreqs = frequencies $ concatMap (\(_, ts, _) -> ts) testSet
+        -- MHash cfreqs = frequencies $ concatMap (\(_, ts, _) -> ts) testSet
 
         testMetric (a, b) = if a == b then 1 else 0
 
@@ -123,11 +128,10 @@ tagDocument d@Document{..} =
         tag ('s':'p':'m':_) = "SPAM"
         tag _               = "HAM"
 
-documentToTraining :: Document b (V.Vector PlainToken)
-                   -> (T.Text, [T.Text], [T.Text])
+documentToTraining :: Document b (V.Vector PlainToken) -> Training
 documentToTraining d@Document{..} =
     ( documentKey d
-    , S.toList _documentTags
+    , head $ S.toList _documentTags
     , S.toList . S.fromList $ V.toList _documentTokens
     )
 

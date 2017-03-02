@@ -1,19 +1,25 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TupleSections       #-}
 
 
 module StatNLP.Statistics.Bayes where
 
 
+import           Control.Arrow
+import           Control.Monad
+import           Data.Bifunctor
 import           Data.Foldable
 import           Data.Hashable
-import qualified Data.HashMap.Strict as M
-import qualified Data.List           as L
+import qualified Data.HashMap.Strict            as M
+import qualified Data.HashSet                   as S
+import qualified Data.List                      as L
 import           Data.Maybe
 import           Data.Monoid
 import           Data.Ord
 
+import           StatNLP.Distributions.Lidstone
 import           StatNLP.Text.Freqs
 import           StatNLP.Types
 
@@ -45,70 +51,143 @@ import           StatNLP.Types
 -
 -}
 
-data BayesTrain w s f
-        = BayesTrain
-        { trainWord         :: FreqMap w
-        , trainCat          :: FreqMap s
-        , trainFeature      :: FreqMap f
-        , trainFeatureSense :: ConditionalFreq s f
-        }
+type FeatureValues f v = M.HashMap f (S.HashSet v)
 
-data BayesDist w s f
-        = BayesDist
-        { bayesPrior :: ConditionalProbMap w s
-        , bayesPost  :: ConditionalProbMap s f
-        }
+data BayesTrain l f v
+    = BayesTrain
+    { trainLabel   :: FreqMap l
+    -- ^ label_freqdist
+    , trainValue   :: FeatureValues f (Maybe v)
+    -- ^ feature_values
+    -- ^ fnames = S.HashSet . M.keys $ trainValue bayes
+    , trainFeature :: ConditionalFreq (l, f) (Maybe v)
+    -- ^ feature_freqdist
+    }
 
-instance ( Eq w, Hashable w, Eq s, Hashable s, Eq f
-         , Hashable f) => Monoid (BayesTrain w s f) where
+data BayesDist l f v
+    = BayesDist
+      { bayesLabelDist   :: Lidstone l
+      , bayesFeatureDist :: M.HashMap (l, f) (Lidstone v)
+      }
 
-    mempty = BayesTrain mempty mempty mempty mempty
-    (BayesTrain aw as af asf) `mappend` (BayesTrain bw bs bf bsf) =
-        BayesTrain (aw `mappend` bw)
-                       (as `mappend` bs)
-                       (af `mappend` bf)
-                       (asf `mappend` bsf)
+instance ( Eq l, Hashable l, Eq f, Hashable f, Eq v, Hashable v
+         ) => Monoid (BayesTrain l f v) where
 
-trainOne :: (Eq w, Hashable w, Eq s, Hashable s, Eq f, Hashable f)
-         => BayesTrain w s f -> w -> [s] -> [f] -> BayesTrain w s f
-trainOne BayesTrain{..} w ss fs =
-    BayesTrain { trainWord         = count    trainWord         w
-               , trainCat          = countAll trainCat          ss
-               , trainFeature      = countAll trainFeature      fs
-               , trainFeatureSense = countAll trainFeatureSense
-                                     [(s, f) | s <- ss, f <- fs]
+    mempty = BayesTrain mempty mempty mempty
+    (BayesTrain al av af) `mappend` (BayesTrain bl bv bf) =
+        BayesTrain (al `mappend` bl) (av `mappend` bv) (af `mappend` bf)
+
+trainOne :: (Eq l, Hashable l, Eq f, Hashable f, Eq v, Hashable v)
+            => BayesTrain l f v        -- ^ The Bayesian trainer
+                -> l                   -- ^ The label
+                -> [(f, v)]            -- ^ Features and values
+                -> BayesTrain l f v
+trainOne BayesTrain{..} l fs =
+    BayesTrain { trainLabel = count trainLabel l
+               , trainValue = foldl' step trainValue $ fmap (fmap Just) fs
+               , trainFeature =
+                   countAll trainFeature [((l, f), Just v) | (f, v) <- fs]
                }
-
-train :: (Traversable t, Eq w, Hashable w, Eq s, Hashable s, Eq f, Hashable f)
-      => BayesTrain w s f -> t (w, [s], [f]) -> BayesTrain w s f
-train = foldl' (uncurry3 . trainOne)
     where
-        uncurry3 :: (a -> b -> c -> d) -> (a, b, c) -> d
-        uncurry3 f (a, b, c) = f a b c
+      step :: (Hashable f, Eq f, Hashable v, Eq v)
+              => FeatureValues f v -> (f, v)
+                                   -> FeatureValues f v
+      step m (f, v) = M.insert f (S.insert v $ M.lookupDefault S.empty f m) m
 
-finishTraining :: BayesTrain w s f -> BayesDist w s f
-finishTraining BayesTrain{..} = BayesDist prior post
+train :: (Traversable t, Eq l, Hashable l, Eq f, Hashable f, Eq v, Hashable v)
+      => BayesTrain l f v -> t (l, [(f, v)]) -> BayesTrain l f v
+train = foldl' step
     where
-        sensePriors sfreq wordCount = (/wordCount) . fromIntegral . getSum
-                                      <$> unHash sfreq
-        prior = sensePriors trainCat . fromIntegral . getSum
-                <$> unHash trainWord
-        post  = probabilities <$> unHash trainFeatureSense
+      step m (l, fs) = trainOne m l fs
 
-categorizeP :: (Eq w, Hashable w, Eq s, Hashable s, Eq f, Hashable f)
-            => BayesDist w s f -> w -> [f] -> ProbMap s
-categorizeP BayesDist{..} w fs =
-    flip (foldl' step) fs . fmap log2 $ M.lookupDefault mempty w bayesPrior
+finishTraining :: (Eq l, Hashable l, Eq f, Hashable f, Eq v, Hashable v)
+                  => BayesTrain l f v
+                      -> Either DistributionException (BayesDist l f (Maybe v))
+finishTraining BayesTrain{..} =
+    BayesDist <$> lidstoneProbDist trainLabel 0.5 Nothing <*> featureProbDist
     where
-        log2 x = logBase x 2
-        step p f = M.mapWithKey (update f) p
-        update f s p = p + (log2 . fromMaybe 0.0)
-                       (M.lookup f =<< M.lookup s bayesPost)
+      labels   = M.keys $ unHash trainLabel
+      features = M.keys trainValue
 
-categorize :: (Eq w, Hashable w, Eq s, Hashable s, Eq f, Hashable f)
-           => BayesDist w s f -> w -> [f] -> Maybe s
-categorize b w fs = listToMaybe
+      counts = do
+        l <- labels
+        let numSamples = frequency trainLabel l
+        f <- features
+        let pair = (l, f)
+            c = total . M.lookupDefault mempty pair $ unHash trainFeature
+            diff = numSamples - c
+        guard (diff > 0)
+        return (pair, diff)
+
+      (tValue, tFeature) = foldl' step (trainValue, trainFeature) counts
+
+      step :: (Eq m, Hashable m, Eq g, Hashable g, Eq w, Hashable w)
+              => (FeatureValues g (Maybe w), ConditionalFreq (m, g) (Maybe w))
+                  -> ((m, g), Int)
+                  -> ( FeatureValues g (Maybe w)
+                     , ConditionalFreq (m, g) (Maybe w))
+      step (vs, fs) (pair@(_, f), c) = ( insertFeatureValue vs f Nothing
+                                       , incConditionalFreq fs pair Nothing c
+                                       )
+
+      featureProbDist = fmap M.fromList
+                        . mapM (uncurry makeProbDist)
+                        . M.toList
+                        $ unHash trainFeature
+
+      makeProbDist p@(l, f) fm =
+          sequenceA . (p,)
+                        . lidstoneProbDist fm 0.5
+                        . Just
+                        . S.size
+                        $ M.lookupDefault mempty f trainValue
+
+insertFeatureValue :: (Eq f, Hashable f, Eq v, Hashable v)
+                      => FeatureValues f v -> f -> v -> FeatureValues f v
+insertFeatureValue fvs f v =
+    M.insert f (S.insert v $ M.lookupDefault mempty f fvs) fvs
+
+incConditionalFreq :: (Eq l, Hashable l, Eq f, Hashable f, Eq v, Hashable v)
+                      => ConditionalFreq (l, f) v -> (l, f) -> v -> Int
+                                                  -> ConditionalFreq (l, f) v
+incConditionalFreq (MHash cf) k v c =
+    MHash . flip (M.insert k) cf
+              . MHash
+              . M.insertWith (+) v (Sum c)
+              . unHash
+              $ M.lookupDefault mempty k cf
+
+categorizeP :: (Eq l, Hashable l, Eq f, Hashable f, Eq v, Hashable v)
+            => BayesDist l f v -> M.HashMap f v -> ProbMap l
+categorizeP BayesDist{..} fs =
+    undefined
+    -- flip (foldl' step) fs . fmap log2 $ M.lookupDefault mempty w bayesPrior
+    where
+      labels = M.keys . unHash . lidstoneFD $ bayesLabelDist
+      features = M.keys fs
+      missing = do
+        f <- features
+        let labelHits = [l | l <- labels, (l, f) `M.member` bayesFeatureDist]
+        guard (L.null labelHits)
+        return f
+      fs' = foldl' (flip M.delete) fs missing
+      logProgs = M.fromList
+                 $ mapMaybe ( sequenceA
+                            . (id &&& logProbability bayesLabelDist)
+                            )
+                 labels
+      logProgs' = foldl' logStep logProgs . catMaybes . fmap join $ do
+                    l <- labels
+                    (f, v) <- M.toList fs'
+                    let key = (l, f)
+                    return $ sequenceA . (l,) . (`logProbability` v)
+                               <$> M.lookup (l, f) bayesFeatureDist
+      logStep m (l, v) = M.insertWith (+) l v m
+
+categorize :: (Eq l, Hashable l, Eq f, Hashable f, Eq v, Hashable v)
+           => BayesDist l f v -> M.HashMap f v -> Maybe l
+categorize l fs = listToMaybe
                   . fmap fst
                   . L.sortBy (comparing (Down . snd))
                   . M.toList
-                  $ categorizeP b w fs
+                  $ categorizeP l fs

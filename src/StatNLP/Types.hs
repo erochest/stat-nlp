@@ -207,9 +207,11 @@ class Monoid f => Frequencies f where
     frequency :: f -> FItem f -> Int
     frequencyItems :: f -> [FItem f]
     total :: f -> Int
+    binCount :: f -> Int
 
     countAll = foldl' count
     total f = sum . map (frequency f) $ frequencyItems f
+    binCount f = length $ frequencyItems f
 
 instance (Eq a, Hashable a) => Frequencies (FreqMap a) where
     type FItem (FreqMap a) = a
@@ -218,6 +220,7 @@ instance (Eq a, Hashable a) => Frequencies (FreqMap a) where
     frequency fqs x = getSum . M.lookupDefault 0 x $ unHash fqs
     frequencyItems = M.keys . unHash
     total = getSum . mconcat . M.elems . unHash
+    binCount = M.size . unHash
 
 instance (Eq a, Hashable a, Eq b, Hashable b)
     => Frequencies (ConditionalFreq a b) where
